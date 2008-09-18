@@ -200,7 +200,7 @@ static int open_serial(char *device)
 	{
 		ioctl(i_FileDescriptor, TIOCGSERIAL, &serinfo);
 		if (serinfo.iomem_base)
-			printf("%X\n", (unsigned int)serinfo.iomem_base);
+			printf("%p\n", serinfo.iomem_base);
 		else
 			printf("%X\n", serinfo.port);
 
