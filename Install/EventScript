@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # avr_evtd Event script
 #
 # Sample Event Script written by Bob Perry
