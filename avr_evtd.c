@@ -792,7 +792,7 @@ static char check_disk(void)
 	int total2=0;
 	char cmd;
 	char* pos;
-	int* file;
+	int file;
 	int iRead;
 	int i;
 	char buff[4096];
@@ -802,12 +802,12 @@ static char check_disk(void)
 	{
 		c_FirstTime = 0;
 		/* Get list of mounted devices */
-		file = (int*)open("/etc/mtab", O_RDONLY);
+		file = open("/etc/mtab", O_RDONLY);
 
 		/* Read in the mounted devices */
 		if (file)
 		{
-			iRead = read((int)file, &buff, 4095);
+			iRead = read(file, buff, 4095);
 
 			pos = strtok(buff, " \n");
 			if (iRead > 0)
@@ -965,8 +965,8 @@ static void parse_avr(char* buff)
 	destroyObject(ponTimer);
 
 	/* Now create our timer objects for on and off events */
-	pOn = ponTimer = (TIMER*)calloc(sizeof(TIMER), sizeof(char));
-	pOff = poffTimer = (TIMER*)calloc(sizeof(TIMER), sizeof(char));
+	pOn = ponTimer = calloc(sizeof(TIMER), sizeof(char));
+	pOff = poffTimer = calloc(sizeof(TIMER), sizeof(char));
 
 	/* Establish some defaults */
 	pesterMessage = 0;
@@ -1503,7 +1503,7 @@ static int check_timer(char type)
 	int iRead;
 	int errno;
 	char buff[4096];
-	int* file;
+	int file;
 	struct stat filestatus;
 
 #ifndef NO_MELCO
@@ -1531,27 +1531,27 @@ static int check_timer(char type)
 
 				/* Open and read the contents */
 #ifdef MIPS
-				file = (int*)open("/etc/melco/timer_status", O_RDONLY);
+				file = open("/etc/melco/timer_status", O_RDONLY);
 
 				if (file)
 				{
-					iRead = read((int)file, &buff, 254);
+					iRead = read(file, buff, 254);
 
 					/* Dump the file pointer for others */
-					close((int)file);
+					close(file);
 
 					if (iRead >0)
 						parse_mips(buff);
 				}
 #else
-				file = (int*)open("/etc/melco/timer_sleep", O_RDONLY);
+				file = open("/etc/melco/timer_sleep", O_RDONLY);
 
 				if (file)
 				{
-					iRead = read((int)file, &buff, 31);
+					iRead = read(file, buff, 31);
 
 					/* Dump the file pointer for others */
-					close((int)file);
+					close(file);
 
 					if (iRead >0)
 						parse_timer(buff);
@@ -1593,14 +1593,14 @@ static int check_timer(char type)
 			/* Has this file changed? */
 			if (filestatus.st_mtime != tt_LastMelcoAcess)
 			{
-				file = (int*)open("/etc/default/avr_evtd", O_RDONLY);
+				file = open("/etc/default/avr_evtd", O_RDONLY);
 
 				if (file)
 				{
-					iRead = read((int)file, &buff, 4095);
+					iRead = read(file, buff, 4095);
 
 					/* Dump the file pointer for others */
-					close((int)file);
+					close(file);
 
 					if (iRead>0)
 					{
