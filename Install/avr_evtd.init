@@ -9,110 +9,116 @@
 # Optional files:
 #  /etc/melco/timer_Sleep - Standard Melco sleep settings
 #
-# Written by Bob Perry (2006) lb-source@users.sourceforge.net
+# Written by Bob Perry (2006) <lb-source@users.sourceforge.net>
+# Modifications by Rogério Brito (2008) <rbrito@ime.usp.br>
 #
 
-#
-# Location of the avr watchdog daemon and the init directory
-#
-DAEMON=/usr/local/sbin/avr_evtd
-initdir=/etc/init.d
+### BEGIN INIT INFO
+# Provides:          avr-evtd
+# Required-Start:    
+# Required-Stop:
+# Default-Start:     1 2 3 4 5
+# Default-Stop:      0 6
+# Short-Description: Linkstation/Kurobox AVR watchdog daemon
+### END INIT INFO
 
-PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+DAEMON=/usr/sbin/avr_evtd
+NAME="avr_evtd"
+DESC="AVR watchdog daemon"
 tag=linkstation
 facility=user.info
 
-test -e $DAEMON || exit 0
+test -x $DAEMON || exit 0
+. /lib/lsb/init-functions
 
 getDevice()
 {
-  #
-  # Load custom settings
-  #
-  MIPS=NO
+    #
+    # Load custom settings
+    #
+    MIPS=NO
 
-  #
-  # Populate the configured settings
-  #
-  [ -f /etc/default/avr_evtd ] && . /etc/default/avr_evtd > /dev/null 2>&1
+    # Include defaults if available
+    if [ -f /etc/default/$NAME ] ; then
+	. /etc/default/$NAME
+    fi
 
-  # Try and determine the UART used.  The MIPS only has one UART
-  # available and the process is built accordingly.  To support modified
-  # kernel's/kuro systems with polled over UARTs, drill into kernel
-  # configuration for the memory configuration of the UART to determine
-  # which tty to use if not set in the configuration file
-  uname -m | grep -q mips && MIPS=YES && DEVICE=/dev/ttyS0
+    # Try and determine the UART used.  The MIPS only has one UART
+    # available and the process is built accordingly.  To support modified
+    # kernel's/kuro systems with polled over UARTs, drill into kernel
+    # configuration for the memory configuration of the UART to determine
+    # which tty to use if not set in the configuration file
+    uname -m | grep -q mips && MIPS=YES && DEVICE=/dev/ttyS0
 
-  if [ -z "$DEVICE" ] && [ "$MIPS" = "NO" ]
-  then
-    DEVICE=/dev/ttyS0
-    # Search for valid port address
-    PORT_ADDRESS=`$DAEMON -i -d /dev/ttyS1`
-    if [ $PORT_ADDRESS -eq 80004500 ] ; then DEVICE=/dev/ttyS1 ; fi
-  fi
+    if [ -z "$DEVICE" ] && [ "$MIPS" = "NO" ]; then
+	DEVICE=/dev/ttyS0
+        # Search for valid port address
+	PORT_ADDRESS=`$DAEMON -i -d /dev/ttyS1`
+	if [ $PORT_ADDRESS -eq 80004500 ]; then DEVICE=/dev/ttyS1 ; fi
+    fi
 }
 
 start()
 {
-  #
-  # Daemon options
-  # e.g -d /dev/ttyS1
-  #
-  daemonoptions=
+    #
+    # Daemon options
+    # e.g -d /dev/ttyS1
+    #
+    daemonoptions=
 
-  CONSOLE=OFF
+    CONSOLE=OFF
   
-  getDevice
+    getDevice
   
-  # Establish daemon startup options based on configuration settings
-  if [ "$EMMODE" = "YES" ]; then daemonoptions=-e ; fi
+    # Establish daemon startup options based on configuration settings
+    if [ "$EMMODE" = "YES" ]; then daemonoptions=-e ; fi
   
-  if [ -n "$DEVICE" ] && [ "$MIPS" = "NO" ]
-  then
-    [ -n "$daemonoptions" ] && daemonoptions="$daemonoptions "
-    daemonoptions="$daemonoptions-d $DEVICE"
-  fi
-
-  # Is this a MIPSEL box?
-  if [ "$MIPS" = "YES" ]
-  then
-    if [ -e /proc/linkstation ]
-    then
-      # Determine if console ttyS0 is in-use
-      CONSOLE=`cat /proc/linkstation | grep CONSOLE | awk -F "=" '{print $2}'`
+    if [ -n "$DEVICE" ] && [ "$MIPS" = "NO" ]; then
+	[ -n "$daemonoptions" ] && daemonoptions="$daemonoptions "
+	daemonoptions="$daemonoptions-d $DEVICE"
     fi
-  fi
 
-  if [ "$CONSOLE" = "ON" ]
-  then
-    echo "[avr_evtd]: Not started services as console in-use"
-    logger -t $tag -p $facility -i 'Not started avr_evtd as kernel still has console'
-  else
-    echo "Start services: avr_evtd"
-    /sbin/start-stop-daemon --start --quiet --exec $DAEMON -- $daemonoptions
-    logger -t $tag -p $facility -i 'Started daemon avr_evtd'
-  fi
+    # Is this a MIPSEL box?
+    if [ "$MIPS" = "YES" ]; then
+	if [ -e /proc/linkstation ]; then
+            # Determine if console ttyS0 is in-use
+	    CONSOLE=`cat /proc/linkstation | grep CONSOLE | awk -F "=" '{print $2}'`
+	fi
+    fi
+
+    if [ "$CONSOLE" = "ON" ]; then
+	echo "[avr_evtd]: Not started services as console in-use"
+	logger -t $tag -p $facility -i 'Not started avr_evtd as kernel still has console'
+    else
+	log_daemon_msg "Starting $DESC " "$NAME"
+	start-stop-daemon --start --quiet --exec $DAEMON -- $daemonoptions
+	log_end_msg $?
+	logger -t $tag -p $facility -i 'Started daemon avr_evtd'
+    fi
 }
 
 stop()
 {
-  getDevice
+    getDevice
  
-  # Determine run-level and respond accordingly
-  # Speed-up fan at exit for an extra chill.
-  if [ -n "$RUNLEVEL" ] && [ -n "$DEVICE" ]; then
-   if [ "$RUNLEVEL" -eq 6 ]; then
-      # Send AVR the reboot signal
-      echo -n "]]]]CCCC" > $DEVICE
-   elif [ "$RUNLEVEL" -eq 0 ]; then
-      # Send AVR the shutdown signal
-      echo -n "]]]]EEEE" > $DEVICE
+    # Determine run-level and respond accordingly
+    # Speed-up fan at exit for an extra chill.
+    if [ -n "$RUNLEVEL" ] && [ -n "$DEVICE" ]; then
+	if [ "$RUNLEVEL" -eq 6 ]; then
+            # Send AVR the reboot signal
+	    echo -n "]]]]CCCC" > $DEVICE
+	elif [ "$RUNLEVEL" -eq 0 ]; then
+            # Send AVR the shutdown signal
+	    echo -n "]]]]EEEE" > $DEVICE
+	fi
     fi
-  fi
 
-  echo "Stop services: avr_evtd"
-  /sbin/start-stop-daemon --stop --quiet --exec $DAEMON
-  logger -t $tag -p $facility -i 'Stopped daemon avr_evtd'
+    log_daemon_msg "Stopping $DESC" "$NAME"
+    start-stop-daemon --stop --quiet --exec $DAEMON
+    log_end_msg $?
+    logger -t $tag -p $facility -i 'Stopped daemon avr_evtd'
 }
 
 # Check request
@@ -123,16 +129,15 @@ case "$1" in
   stop)
     stop
     ;;
-  restart)
+  restart|force-reload)
     stop
     sleep 1
     start
     ;;
   *)
-    echo "Usage: $DAEMON {start|stop|restart}" >&2
+    echo "Usage: $DAEMON {start|stop|restart|force-reload}" >&2
+    exit 1
     ;;
 esac
 
 exit 0
-
-
