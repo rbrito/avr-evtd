@@ -832,6 +832,7 @@ static char check_disk(void)
 				}
 			}
 		}
+		close(file);
 	}
 
 	/* Only perform these tests if DISKCHECK is enabled and partition's havev been defined */
