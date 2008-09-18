@@ -1,0 +1,503 @@
+.TH AVR_EVTD 8 "2 May 2006" 
+
+.SH NAME
+
+avr_evtd - Linkstation AVR Event daemon
+
+.SH SYNOPSIS 
+
+avr_evtd [
+.B -d 
+.IR /dev/tty
+] [i | c | v] 
+
+.SH DESCRIPTION
+
+.IR avr_evtd 
+is a simple and small user space interface to the Linkstation AVR
+micro-controller.  It doesn't have a lot of special features, but it's
+main task is to provide 'keep-alive' messages to the Linkstation's
+on-board AVR device.  This device controls/monitors the fan, various
+LEDs, timed power up and two buttons.  This daemon provides the
+necessary initialization to the device and also stimulates the LEDs
+depending on various fault conditions.  It also monitors a power button
+(located at the front) and a reset button (located at the rear).
+
+.IR avr_evtd
+searches for a configuration file located within
+.B /etc/melco 
+at start-up time. If this file does not exist, then 
+.IR avr_evtd 
+reverts to reading the file located at 
+.B /etc/default/avr_evtd.
+Additionally, 
+.IR avr_evtd
+may, if requested, periodically check the root (\fBUnder user control
+and could be /dev/hda1\fP) partition and the user working partition
+(\fBFor example, /dev/hda3\fP) to ensure they are mounted.  Also, if
+requested, it will determine if sufficient space remains and if not then
+the AVR is requested to illuminate the DISK LED.  This periodic checking
+also takes place on the configuration files.  If they are deemed to have
+been updated, then the daemon will respond accordingly.
+.LP
+Any failures are normally routed through the log files.  With timed
+shutdown/power up, a warning will be broadcast to all users (console
+message) when within 5 or less minutes of power off.  Also, fan failure
+alerts will be broadcast in this fashion.  Failure to determine mounted
+.B working
+partition will result in the DIAG LED flashing three times, repeatedly.
+.LP
+A new feature of this daemon is the ability to code events for single or
+groups of days.  This allows the user to add any number of power-on/off
+events as required.  This also has the added benefit of being able to
+shut down the device for longer periods.  The internal AVR timer has a
+12-bit resolution timer which can power up the Linkstation from a
+maximum of a sixty eight hour sleep: from time of invocation.  The AVR
+is updated again at time of power down/shutdown to re-validate the
+timer, in case of time updates (either by user or NTP).  This will also
+preserve the 68 hour sleep resolution.
+
+.SH OPTIONS 
+
+.TP 5 
+.B -d
+.IR /dev/tty
+Specifies the UART device used to communicate with the AVR. This is
+normally taken care of by the scripts but can be specified in the
+configuration file.
+.B See below for details. 
+
+.TP 5
+.B -c
+Don't fork, i.e. run in the foreground (debug use only).
+
+.TP
+.B -i
+Returns the port memory location for the device specified by
+.B -d
+.IR /dev/tty
+
+.TP 5
+.B -v
+Display daemon version.
+
+.SH THE CONFIGURATION FILE
+
+The
+.IR avr_evtd
+configuration file is the fallback file in the event that the stock
+melco files do not exist.  The file is read at initial start-up in order
+to determine if timed shutdown is required and if the disk usage is to
+be monitored.  The file should be always located within the /etc/default
+directory and a sample file is provided.  The file format is similar to
+other Unix configuration files - comments begin with a # character and
+extend to the end of the line; blank lines are ignored.  Configuration
+commands consist of an initial keyword followed by an argument.
+Arguments may be strings or times written in HH:MM (UTC) format.
+Optional arguments are delimited by [ ] in the following descriptions,
+while alternatives are separated by |.
+
+.TP 5
+
+.IR DEBUG
+[ON | OFF]
+
+This is reserved for admin only.  Allows logging of certain information.
+A log file will be maintained in /etc/avr_evtd logging events and when
+run from command line, the process will log data to the console.
+
+.TP 5
+
+.IR TIMER
+[YES | NO]
+
+The timer command informs the daemon if it has to provide time
+controlled shutdown and power up.  If
+.IR TIMER
+is set to
+.B NO
+then this function is not available and the commands
+.IR SHUTDOWN
+and
+.IR POWERON
+are ignored and have no effect.  The same applies if any day events are
+specified and the
+.IR TIMER
+is set to
+.B NO
+then these events will also be ignored.
+
+.TP 5
+
+.IR DEVICE
+[/dev/tty]
+
+This informs the AVR which UART to use when communicating with the AVR.
+The communication path between the micro-controller and this daemon is
+via a serial link.  This keyword is not for general use and is provided
+to allow advanced users the option of overriding automatic
+configuration.  This would normally be set to /dev/ttyS1 but on some
+systems it is /dev/ttyS0.  The selection of the correct port is
+performed by the daemon start script and is not normally required to be
+altered.
+
+.TP 5
+
+.IR [<day> | <day>-<day>]
+[ON=HH:MM | ON= | OFF=HH:MM | OFF=]
+
+This defines events for either a single day or group of days, '-'
+separator.  Any number of
+.B ON
+and
+.B OFF
+events can be specified and can be extended over additional lines. <day>
+can be any number of days of the week specified as either SUN, MON, TUE,
+WED, THR, FRI, and SAT.  For example:
+
+.RS 15
+.B MON-WED=ON=09:00,OFF=23:00
+.RE
+.RS 15
+.B THR=ON=09:00
+.RE
+.RS 15
+.B FRI=OFF=01:00
+.RE
+
+.RS 5
+In this example, the first power on event is Monday at 09:00.  At 23:00
+the Linkstation will power down.  This is repeated for Tuesday and
+Wednesday.  On Thursday, the Linkstation will power on at 09:00 and will
+power off on Friday at 01:00.  The unit will then remain off for
+Saturday and Sunday and not power up again till 09:00 on Monday.  The
+unit is capable of sleeping for no more than 68 hours (due to the
+resolution of the internal timer).  Again, this time MUST be specified
+in UTC format and follow HH:MM.
+.LP
+Five minutes before power off is required, a message is broadcast to all
+console users.  At shutdown, an event message is sent to the event
+script.
+.B See below for more details.
+
+.RE
+
+.TP 5
+
+.IR SHUTDOWN
+[HH:MM]
+
+This specifies the time that the Linkstation will be powered down.  This
+time MUST be specified in UTC and must follow the format HH:MM.  If the
+user alters this configuration file whilst the daemon is running, then
+the change will be seen and the new settings will be implemented.  If
+the new time entered is passed the current time, then the shutdown time
+will be for the following day.  If single or multiple day events are
+specified, then this becomes the default power down time for any
+undefined days.
+
+.TP 5
+
+.IR POWERON
+[HH:MM]
+
+This specifies the time that the Linkstation will be automatically
+powered up; as long as now unexpected power outage occurs.  Again, if
+this time is less than the
+.IR SHUTDOWN
+time then it is for the following day.  Both the
+.IR TIMER
+set to ON and the
+.IR SHUTDOWN
+and the
+.IR POWERON
+times are valid will timed shutdown/power up be enabled.  This will be
+reported in the message log along with any errors in the configuration
+file.
+
+.RS 5
+If single or multiple day events are specified, then this becomes the
+default power on time for any undefined days.
+.RE
+
+.TP 5
+
+.IR DISKCHECK
+[OFF | 0..100]
+
+If this is set to OFF or 0 (zero) then disk usage/monitoring is
+disabled.  Set to a value between 0 and 100% to monitor disk usage.  If
+disk usage is above this specified value, then the DISK LED will be
+illuminated.  At the same time, a disk full event message will be sent
+to the event script.
+
+.TP 5
+
+.IR ROOT
+[hda1..9]
+
+No default.  This allows the root partition to be defined by the user.
+No syntax checking is performed on this entry or validation of the
+partition ID.
+
+.TP 5
+
+.IR WORK
+[hda1..9]
+
+No default.  This allows the working partition to be defined by the
+user.  Again, no syntax checking is performed on this entry or
+validation of the partition ID.
+
+.TP 5
+
+.IR REFRESH
+[1..300]
+
+This defaults to 40.  This provides control over the rate (in seconds)
+that the daemon checks the system for changes and refreshes the AVR.
+Any number between 1 and 300 can be entered.  Anything less than the
+default will result in higher impact on the system: more CPU usage.
+Higher times will result with slower response to configuration file
+changes but this may not be an issue with most users.
+
+.TP 5
+
+.IR HOLD
+[1..9]
+
+This defaults to 3.  This provides control over the time (in seconds)
+that the user needs to hold either the reset of the power button in for
+a reset event (reset button) or power off event (power button).
+
+.TP 5
+
+.IR DISKNAG
+[ON | OFF]
+
+Default if off.  This provides the user control over the disk full
+event.  The default is that once detected, just a single event is
+triggered.  If required, setting this to on will generate repeated
+events, at the frequency of
+.B REFRESH
+until the disk is no longer deemed full.
+
+.TP 5
+.IR FANSTOP
+[OFF | 0..60]
+
+Default is 30 seconds. This is the time, from report of fan failure in
+which the daemon will generate a fan failure event call to the event
+script.  This allows the user to act accordingly.  At present, the
+script is setup to power down.  This can be changed to an e-mail event
+prior to shutdown if required.
+
+Otherwise, if a user has decided to remove the fan then this can be set
+to OFF to prevent shutdown from occuring.  It must be stressed that
+alternative cooling must be sourced if this option is selected.
+
+.SH BUTTON OPERATION
+
+All events, whether mechanical button operation, or software
+reset/shutdown actions are routed through an event script located at
+.B /etc/avr_evtd/EventSCript
+
+.TP 5
+
+.IR POWER
+On press, a button event message is sent.  On release, another event
+message is sent.  If the button is held in for more than
+.B HOLD
+seconds, then a shutdown event request is sent.  If the button is
+pressed twice within a period of one second, then a reset request event
+is sent.
+.RS 5
+
+If the power button is pressed during the five minute timed shutdown
+warning, then the shutdown time is increased by five minutes.  Multiple
+presses will keep increasing the time by five minutes (to a maximum
+pause of fifty minutes).  This provides the user with the ability to
+carry on working before timed shutdown is finally activated; careful
+here as repeated presses maybe seen as a reboot request.
+.RE
+.TP 5
+
+.IR RESET
+On press, a button event message is sent.  On release, another event
+message is sent.  If the button is held in for more than twenty seconds,
+then a EM-Mode event request is sent.  If the button is pressed twice
+within a period of one second, then a
+.I special
+event is sent which in the default state will launch the telnet daemon.
+
+.SH MESSAGE EVENTS
+
+The event system has been modified such that 99% of the daemon event
+system is pushed through the event script.  A third parameter is
+supplied by the daemon out to the script detailing information relevant
+to the generated message.  For example, for a disk full message, the
+third parameter would detail the percentage disk space used (worst of
+the two monitored partitions) and when this is cleared, then this
+parameter would be cleared to zero.
+
+.TP 5
+
+.IR 0
+User has requested (by double press of reset button) to, with the first
+press, launch the telnet daemon, or other client as specified in the
+.IR EventScript.  
+The script also establishes a static IP to an alias Ethernet device :EM
+at 192.168.11.150.  If this IP is already in-use, then it will not be
+created.  If the Ethernet is not running, then an alternative Ethernet
+configuration file is loaded providing a static IP at 192.168.11.150.
+and also a DHCP provided IP.  On the
+.IR THIRD
+double press, then a known set of group and user password files are
+copied to /etc.  Prior to the transfer, the relevant original files are
+copied to
+.IR .em.  
+A file, recovery.tar, is extracted and the LEDs are flashed to indicate
+this new mode.  A user can now gain root access using the password
+.I emergency 
+and gain access via the telnet port 1234 to their box.
+
+.TP 5
+
+.IR 1
+AVR micro-controller has requested a reset.
+
+.TP 5
+
+.IR 2
+Shutdown request from the shutdown timer event.
+
+.TP 5
+
+.IR 3
+Power button has been released event.
+
+.TP 5
+
+.IR 4
+Power button has been pressed event.
+
+.TP 5
+
+.IR 5
+Reset button (rear of unit) has been released.
+
+.TP 5
+
+.IR 6
+Reset button has been pressed.
+
+.TP 5
+
+.IR 7
+User has requested (by holding power button for more than
+.B HOLD
+seconds) to shutdown the unit.
+
+.TP 5
+
+.IR 8
+User has requested (by double press of the power button) to reset the
+unit.
+
+.TP 5
+
+.IR 9
+Disk usage greater than DISKCHECK.  Parameter 3 set to percentage used
+or zero.
+
+.TP 5
+
+.IR F
+Fan has been stationary for FANSTOP seconds.  Parameter 3 is set to 4
+when cleared.
+
+.TP 5
+
+.IR E
+EM-Mode has been selected.  The EM-Mode sequence is written to the
+desired flash location and the system is issued a reboot request.
+EM-Mode is an emergency boot mode that for the Linkstation it boots from
+an image in flash and rebuilds files on the disk.
+.B This should only be used by those who know what will happen to their
+disks when this Mode is selected
+
+.TP 5
+
+.IR S
+The system will shutdown in less than five minutes warning.  Parameter 3
+indicates shutdown delay on power press.
+
+.TP 5
+
+.IR D
+Error message handler.  Parameter 3 indicates error number.
+
+.SH ERROR CODES
+
+The following error messages maybe displayed in the log files during
+operation:
+
+.TP 5
+
+.IR 1
+No stock or avr_evtd configuration files were located.
+
+.TP 5
+
+.IR 2
+Power off time greater than that supported by the AVR.  As this is
+calculated at the time the timer is established, this fault may clear at
+shutdown as timers are re-validated.
+
+.TP 5
+
+.IR 3
+Timer declaration error in /etc/default/avr_evtd configuration file
+
+.TP 5
+
+.IR 4
+Error in stock configuration file
+
+.SH FILES
+
+.RS 0
+.IR /etc/default/avr_evtd
+.RE
+.RS 0
+.IR /etc/avr_evtd/EventScript
+.RE
+.RS 0
+.IR /etc/avr_evtd/emergency_eth0
+.RE
+.RS 0
+.IR /etc/default/events.log
+.RE
+.RS 0
+.IR /etc/avr_evtd/recovery.tar
+.RE
+
+.SH AUTHOR 
+
+Bob Perry <lb-source@users.sourceforge.net>
+
+.SH COPYRIGHT
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2 of the License, or (at your
+option) any later version.
+.LP
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+Public License for more details.
+.LP
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+675 Mass Ave, Cambridge, MA 02139, USA.
