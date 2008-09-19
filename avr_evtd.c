@@ -2,6 +2,7 @@
 * Linkstation AVR daemon
 *
 * Written by Bob Perry (2006) lb-source@users.sourceforge.net
+* Modified by Rogério Brito (2008) rbrito@users.sourceforge.net
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -19,7 +20,9 @@
 *
 */
 
-/*	V1.7.2	Script changes.  Additions to run script in background and
+/*
+	$Rev$   Inclusion in the sourceforge repository and small bugfixes.
+	V1.7.2	Script changes.  Additions to run script in background and
 			added 5 minute shutdown event and moved other event messages
 			to the system.
 	V1.7.1	Minor fixes to the config parser.  Changes to the keep alives to
@@ -130,7 +133,7 @@ int fanFaultSeize=30;
 int checkState=1; /* Will force an update within 15 seconds of starting up
 					to resolve those pushed out refresh times */
 char em_mode=0;
-const char strVersion[]="Linkstation/Kuro AVR daemon Version 1.7.2\n";
+const char strVersion[]="Linkstation/Kuro AVR daemon Revision $Rev$\n";
 char rootPartition[10]=""; /* Default, no defaults for both root and working partitions */
 char workingPartition[10]="";
 int diskCheckNumber=0;
