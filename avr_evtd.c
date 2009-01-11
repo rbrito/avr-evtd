@@ -1589,7 +1589,7 @@ static int check_timer(char type)
 		/* File is missing so default to off and do not do this again */
 		c_CommandLineUpdate = 2;
 
-		errno = stat("/etc/default/avr_evtd", &filestatus);
+		errno = stat("/etc/default/avr_evtd.config", &filestatus);
 
 		/* If exists? */
 		if (0 == errno)
@@ -1597,7 +1597,7 @@ static int check_timer(char type)
 			/* Has this file changed? */
 			if (filestatus.st_mtime != tt_LastMelcoAcess)
 			{
-				file = open("/etc/default/avr_evtd", O_RDONLY);
+				file = open("/etc/default/avr_evtd.config", O_RDONLY);
 
 				if (file)
 				{
