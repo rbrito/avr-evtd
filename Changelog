@@ -1,0 +1,29 @@
+50		Changes to configuration filename.
+22		Inclusion in the sourceforge repository and small bugfixes.
+V1.7.2	Script changes.  Additions to run script in background and
+		added 5 minute shutdown event and moved other event messages
+		to the system.
+V1.7.1	Minor fixes to the config parser.  Changes to the keep alives to
+		allow user control over DISK FULL LED
+V1.7	Allow running without fan.  A  bit more code  reduction. Allow
+		the user to specify checked drive partitions so to cater for
+		those with customised drives.
+V1.6.3	Correct rounding down in disk usage calculations. Also corrected
+		time skew as a result of user/ntp time updates.
+V1.6.2	Script changes only.
+V1.6.1	Offical release.  Improvements to code size.  Additions made
+		to scripts for 'boost' cooling at shutdown/reboot (following
+		issues in hot environments).  Fixes to timer calcs.
+V1.6 	Improve available timer resolution.  Provided 'paused' shutdown
+		which inhibits timer revalidation as clock is now wrong.  Aid
+		CPU loading but also pick up timer demands shortly after init.
+		so long refresh periods are caught.  Fixed bug with finding off time as current.
+		Corrected AVR message 0x31 to a halt request. Profiled code.
+V1.5	Introduced macro'd ON/OFF control.  Many changes made to
+		default and melco file detection.  User control over button
+		detection times and daemon refresh rates.
+V1.4	Conditional compilation #def's added for NO_MELCO
+V1.3	Added fan fault messaging.
+V1.2	Changes to UART initialisation.  Code added to support MIPS range.
+V1.1	Project renamed.  Disk check introduced.
+V1.0	Release
