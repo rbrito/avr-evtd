@@ -22,19 +22,18 @@ avr_evtd: avr_evtd.c
 clean: avr_evtd
 	-rm -f avr_evtd
 	-rm -f /etc/init.d/avr_evtd
-	-rm -f /usr/sbin/man/man1/avr_evtd.1.gz
-	-rm -f /etc/default/avr_evtd
+	-rm -f /etc/default/avr_evtd.sample
 	-rm -f /etc/avr_evtd/EventScript
 	-rm -f /usr/local/sbin/avr_evtd
-	-rm -f /usr/local/man/man1/avr_evtd.1.gz
+	-rm -f /usr/local/man/man8/avr_evtd.8
 	
 install: avr_evtd
 	#
 	# ENSURE DAEMON IS STOPPED
 	if [ -e /etc/init.d/avr_evtd ]; then /etc/init.d/avr_evtd stop ; fi
 	-rm -f /etc/init.d/avr_evtd
-	if [ -e /usr/bin/strip ]; then strip --strip-unneeded avr_evtd ; fi
-	cp Install/avr_evtd /etc/init.d/.
+	if [ -e /usr/bin/strip ]; then strip --strip-unneeded $(LOCATION)avr_evtd ; fi
+	cp Install/avr_evtd.init /etc/init.d/avr_evtd
 	chmod +x /etc/init.d/avr_evtd
 
 	#
@@ -59,15 +58,14 @@ install: avr_evtd
 	#
 	# ENSURE DEFAULT AVAILABLE
 	if [ ! -d /etc/default ]; then mkdir /etc/default ; fi
-	if [ ! -e /etc/default/avr_evtd ]; then \
-	cp Install/avr_evtd.sample /etc/default/avr_evtd ; else \
-	cp Install/avr_evtd.sample /etc/default/avr_evtd.sample ; fi
+	if [ ! -e /etc/default/avr_evtd.config ]; then \
+	cp Install/avr_evtd.config /etc/default/avr_evtd.config ; else \
+	cp Install/avr_evtd.config /etc/default/avr_evtd.sample ; fi
 
 	#
 	# ENSURE LOCAL MAN AVAILABLE
 	if [ ! -d /usr/local/man ]; then mkdir /usr/local/man ; fi
-	if [ ! -d /usr/local/man/man1 ]; then mkdir /usr/local/man/man1 ; fi
-	-rm -f /usr/sbin/man/man1/avr_evtd.1.gz
-	-cp Install/avr_evtd.1.gz /usr/local/man/man1/.
+	if [ ! -d /usr/local/man/man8 ]; then mkdir /usr/local/man/man8 ; fi
+	-cp Install/avr_evtd.8 /usr/local/man/man8/.
 
 	-/etc/init.d/avr_evtd start
