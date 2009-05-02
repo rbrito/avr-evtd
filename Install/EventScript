@@ -1,8 +1,8 @@
 #!/bin/bash
-# avr_evtd Event script
+# avr-evtd Event script
 #
 # Sample Event Script written by Bob Perry
-# NOTE: No longer syncronous with avr_evtd process: maybe more than
+# NOTE: No longer syncronous with avr-evtd process: maybe more than
 # one instance of this script running
 #
 # Enters via the avr_evtd daemon with the following command options:
@@ -30,10 +30,10 @@ facility=user.info
 #
 # Populate the configured settings
 #
-[ -f /etc/default/avr_evtd ] && . /etc/default/avr_evtd /dev/null 2>&1
+[ -f /etc/default/avr-evtd ] && . /etc/default/avr-evtd /dev/null 2>&1
 
 if [ "$DEBUG" = "ON" ] && [ -d "$LOG" ]; then
-  echo "`date` command is $1[$3] for $DEVICE" >> $LOG/avr_evtd.log
+  echo "`date` command is $1[$3] for $DEVICE" >> $LOG/avr-evtd.log
 fi
 
 case "$1" in
@@ -50,7 +50,7 @@ case "$1" in
 	        ifconfig eth0:EM 192.168.11.150 netmask 255.255.255.0 up
 	      fi
 	    else
-	      /sbin/ifup --force -a -i /etc/avr_evtd/emergency_eth0
+	      /sbin/ifup --force -a -i /etc/avr-evtd/emergency-eth0
 	      sleep 1
 	      route add -net 192.168.11.0 netmask 255.255.255.255.0 eth0:EM
 	    fi
@@ -68,32 +68,32 @@ case "$1" in
 	    if [ ! -e /etc/group.em ]; then cp -f /etc/group /etc/group.em ; fi
 	    if [ ! -e /etc/gshadow.em ]; then cp -f /etc/gshadow /etc/gshadow.em ; fi
 	    if [ ! -e /etc/issue.net.em ]; then cp -f /etc/issue.net /etc/issue.net.em ; fi
-	    tar xvf /etc/avr_evtd/recovery.tar
+	    tar xvf /etc/avr-evtd/recovery.tar
 	    ;;
 	*)  exit -2 ;;
 	esac ;;
-  3)  echo -n "[avr_evtd]: Power Button Up"
+  3)  echo -n "[avr-evtd]: Power Button Up"
       ;;
-  4)  echo -n "[avr_evtd]: Power Button Down"
+  4)  echo -n "[avr-evtd]: Power Button Down"
       ;;
-  5)  echo -n "[avr_evtd]: Reset Button Up"
+  5)  echo -n "[avr-evtd]: Reset Button Up"
       ;;
-  6)  echo -n "[avr_evtd]: Reset Button Down"
+  6)  echo -n "[avr-evtd]: Reset Button Down"
       ;;
-  1|2|7)  echo -n "[avr_evtd]: Shutdown"
+  1|2|7)  echo -n "[avr-evtd]: Shutdown"
       echo -n "]]]]EEEE" > $DEVICE
       # Perform shutdown request
       shutdown -h now ;;
-  8)  echo -n "[avr_evtd]: User demanded reset"
+  8)  echo -n "[avr-evtd]: User demanded reset"
       echo -n "]]]]CCCC" > $DEVICE
       # Perform reboot
       reboot ;;
   9)  if [ "$3" -eq 0 ]; then
-        echo -n "[avr_evtd]: Disk usage now safe"
+        echo -n "[avr-evtd]: Disk usage now safe"
       else
-        echo -n "[avr_evtd]: Disk used $3% > Monitored $DISKCHECK%"
+        echo -n "[avr-evtd]: Disk used $3% > Monitored $DISKCHECK%"
       fi ;;
-  E)  echo -n "[avr_evtd]: EM mode selected"
+  E)  echo -n "[avr-evtd]: EM mode selected"
       if [ "$EMMODE" = "YES" ]; then
         # Determine flash block to use, default to 2
         if [ -f /proc/mtd ]; then
@@ -122,7 +122,7 @@ case "$1" in
           fi 
         fi
       fi ;;
-  F)  echo -n "[avr_evtd]: Fan failure detected"
+  F)  echo -n "[avr-evtd]: Fan failure detected"
       if [ "$3" -eq 0 ]; then
         logger -p user.emerg -i 'AVR Detected fan fault'
       fi

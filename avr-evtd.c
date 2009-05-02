@@ -1,8 +1,8 @@
 /*
 * Linkstation AVR daemon
 *
-* Written by Bob Perry (2006) lb-source@users.sourceforge.net
-* Modified by Rogério Brito (2008) rbrito@users.sourceforge.net
+* Copyright 2006 Bob Perry <lb-source@users.sf.net>
+* Copyright 2008, 2009 Rogério Brito <rbrito@users.sf.net>
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -37,10 +37,10 @@
 #include <linux/serial.h>
 
 /* A few defs for later */
-#define HOLD_TIME		    1
+#define HOLD_TIME		1
 #define HOLD_SECONDS		3
 #define FIVE_MINUTES		5*60
-#define TWELVEHR		    12*60
+#define TWELVEHR		12*60
 #define TWENTYFOURHR		TWELVEHR*2
 #define TIMER_RESOLUTION	4095
 #define FAN_SEIZE_TIME		30
@@ -48,19 +48,19 @@
 #define SP_MONITOR_TIME		10
 
 /* Event message definitions */
-#define SPECIAL_RESET	'0'
+#define SPECIAL_RESET		'0'
 #define AVR_HALT		'1'
-#define TIMED_SHUTDOWN	'2'
-#define POWER_RELEASE	'3'
+#define TIMED_SHUTDOWN		'2'
+#define POWER_RELEASE		'3'
 #define POWER_PRESS		'4'
-#define RESET_RELEASE	'5'
+#define RESET_RELEASE		'5'
 #define RESET_PRESS		'6'
-#define USER_POWER_DOWN	'7'
+#define USER_POWER_DOWN		'7'
 #define USER_RESET		'8'
 #define DISK_FULL		'9'
 #define FAN_FAULT		'F'
 #define EM_MODE			'E'
-#define FIVE_SHUTDOWN	'S'
+#define FIVE_SHUTDOWN		'S'
 #define ERRORED			'D'
 
 /* Macro event object definition */
@@ -100,7 +100,7 @@ char i_debug=0;
 char pesterMessage=0;
 int fanFaultSeize=30;
 int checkState=1; /* Will force an update within 15 seconds of starting up
-					to resolve those pushed out refresh times */
+		     to resolve those pushed out refresh times */
 char em_mode=0;
 const char strVersion[]="Linkstation/Kuro AVR daemon Revision $Rev$\n";
 char rootPartition[10]=""; /* Default, no defaults for both root and working partitions */
@@ -115,15 +115,14 @@ static int check_timer(char type);
 static void termination_handler(int signum);
 static int open_serial(char *device) __attribute__((always_inline));
 
-// Not legal indented #ifdef statement but makes it readable
 #ifdef MIPS
-	#ifndef NO_MELCO
-		static void parse_mips(char* buff) __attribute__((always_inline));
-	#endif
+#ifndef NO_MELCO
+	static void parse_mips(char* buff) __attribute__((always_inline));
+#endif
 #else
-	#ifndef NO_MELCO
-		static void parse_timer(char* buff);
-	#endif
+#ifndef NO_MELCO
+	static void parse_timer(char* buff);
+#endif
 #endif
 
 static int close_serial(void);
@@ -151,7 +150,7 @@ static void writeUART(char output)
 static int open_serial(char *device)
 {
 	/* Establish connection to comport and initialise the port
-		as required */
+	   as required */
 	struct termios newtio;
 #ifndef MIPS
 	struct serial_struct serinfo;
@@ -175,7 +174,6 @@ static int open_serial(char *device)
 			printf("%p\n", serinfo.iomem_base);
 		else
 			printf("%X\n", serinfo.port);
-
 		return 0;
 	}
 #endif
@@ -205,7 +203,7 @@ static int open_serial(char *device)
 	writeUART(0x4A);
 	writeUART(0x3E);
 
-	// Remove flashing DISK  LED
+	/* Remove flashing DISK LED */
 	writeUART(0x58);
 
 	return 0;
@@ -215,13 +213,13 @@ static int close_serial(void)
 {
 	if (i_FileDescriptor != 0)
 	{
-		/* The AVR does not really need to see this, just stops the timer watchdog which happens when it powers down anyway */
+	/* The AVR does not really need to see this, just stops the
+	 * timer watchdog which happens when it powers down anyway */
 #ifndef MIPS
 		writeUART(0x4B);
 #endif
 		/* Close port and invalidate our pointer */
 		close(i_FileDescriptor);
-
 		i_FileDescriptor = 0;
 	}
 
@@ -254,7 +252,7 @@ static void execute_command(char cmd, int cmd2)
 	char strEventScript[45];
 
 	/* Send device info to the event script handler */
-	sprintf(strEventScript, "/etc/avr_evtd/EventScript %c %s %d &", cmd, avr_device, cmd2);
+	sprintf(strEventScript, "/etc/avr-evtd/EventScript %c %s %d &", cmd, avr_device, cmd2);
 	system(strEventScript);
 }
 
@@ -295,16 +293,19 @@ static void avr_evtd_main(void)
 	{
 		tt_TimeoutPoll.tv_usec = 0;
 		iResult = refreshRate;
-		/* After file change or startup, update the time within 20 secs
-		as the user may have pushed the refresh time out */
+		/* After file change or startup, update the time within
+		 * 20 secs as the user may have pushed the refresh time
+		 * out
+		 */
 		if (checkState>0)
 		{
 			iResult = 2;
 		}
 		else
 		{
-			/* Change our timer to check for a power/reset request
-			need a faster poll rate here to see the double press event properly */
+			/* Change our timer to check for a power/reset
+			   request need a faster poll rate here to see
+			   the double press event properly */
 			if (c_PushedPowerFlag || c_PushedResetFlag || c_FirstTimeFlag > 1)
 			{
 				tt_TimeoutPoll.tv_usec = 250;
@@ -315,15 +316,18 @@ static void avr_evtd_main(void)
 
 		if (checkState != -2)
 		{
-			/* Ensure we shutdown on the nail if the timer is enabled
-			will be off slightly as timer reads are different */
+			/* Ensure we shutdown on the nail if the timer
+			   is enabled will be off slightly as timer
+			   reads are different */
 			if (1 == i_TimerFlag)
 			{
 				if (l_ShutdownTimer < iResult)
 					iResult = l_ShutdownTimer;
 			}
 
-			/* If we have a fan failure report, then ping frequently */
+			/* If we have a fan failure report, then ping
+			 * frequently
+			 */
 			if (i_fan_fault > 0)
 				iResult = i_fan_fault == 6 ? fanFaultSeize : 2;
 		}
@@ -469,7 +473,9 @@ static void avr_evtd_main(void)
 				/* Power down selected */
 				if(1 == c_PushedPowerFlag)
 				{
-					/* Re-validate our time wake-up; do not perform if in extra time */
+					/* Re-validate our time wake-up;
+					 * do not perform if in extra
+					 * time */
 					if (!extraTime)
 						set_avr_timer(1);
 
@@ -482,14 +488,20 @@ static void avr_evtd_main(void)
 			}
 
 #ifndef UBOOT
-			/* Has user held the reset button long enough to request EM-Mode? */
+			/* Has user held the reset button long enough to
+			 * request EM-Mode? */
 			if ((tt_TimeIdle + EM_MODE_TIME) < tt_TimeNow)
 			{
 				if(1 == c_PushedResetFlag && em_mode)
 				{
-					/* Send EM-Mode request to script.  The script handles the flash device decoding
-					and writes the HDD no-good flag NGNGNG into the flash status.  It then flags a
-					reboot which causes the box to boot from ram-disk backup to recover the HDD */
+					/* Send EM-Mode request to
+					script.  The script handles the
+					flash device decoding and writes
+					the HDD no-good flag NGNGNG into
+					the flash status.  It then flags
+					a reboot which causes the box to
+					boot from ram-disk backup to
+					recover the HDD */
 					execute_command1(EM_MODE);
 
 					c_PushedResetFlag = 0;
@@ -497,7 +509,8 @@ static void avr_evtd_main(void)
 				}
 			}
 #endif
-			/* Skip this processing during power/reset scan */
+			/* Skip this processing during power/reset
+			 * scan */
 			if (!c_PushedResetFlag && !c_PushedPowerFlag && c_FirstTimeFlag < 2)
 			{
 				/* shutdown timer event? */
@@ -508,7 +521,11 @@ static void avr_evtd_main(void)
 					{
 						lTimerDiff = (tt_TimeNow - tt_LastShutdownPing);
 
-						/* If time difference is more than a minute, force a re-calculation of shutdown time */
+						/* If time difference is
+						 * more than a minute,
+						 * force a
+						 * re-calculation of
+						 * shutdown time */
 						if (refreshRate + 60 > abs(lTimerDiff))
 						{
 							l_ShutdownTimer -= lTimerDiff;
@@ -546,7 +563,8 @@ static void avr_evtd_main(void)
 				/* Keep track of shutdown time remaining */
 				tt_LastShutdownPing = time(NULL);
 
-				/* Split loading, handle disk checks over a number of cycles, reduce CPU hog */
+				/* Split loading, handle disk checks over a number of cycles,
+				   reduce CPU hog */
 				switch(checkState)
 				{
 					/* Kick state machine */
@@ -563,7 +581,8 @@ static void avr_evtd_main(void)
 					/* Check the disk and ping AVR accordingly */
 					case -2:
 
-					/* Check the disk to see if full and output appropriate AVR command? */
+					/* Check the disk to see if full and output appropriate
+					   AVR command? */
 					case 2:
 						cmd = keepAlive;
 
@@ -620,7 +639,8 @@ static void avr_evtd_main(void)
 				case 4:
 					if ((tt_fault_time + fanFaultSeize) < tt_TimeNow)
 					{
-						/* Run some user script on no fan restart message after FAN_FAULT_SEIZE time */
+						/* Run some user script on no fan restart message
+						   after FAN_FAULT_SEIZE time */
 						execute_command(FAN_FAULT, 4);
 						i_fan_fault = 5;
 					}
@@ -638,7 +658,9 @@ static void avr_evtd_main(void)
 					break;
 			}
 
-			/* Check that the shutdown pause function (if activated) is still available, no then ping the delayed time */
+			/* Check that the shutdown pause function (if
+			 * activated) is still available, no then ping
+			 * the delayed time */
 			if ((tt_Power_Press + SP_MONITOR_TIME) < tt_TimeNow && c_FirstTimeFlag > 1)
 			{
 				/* Inform the EventScript */
@@ -751,9 +773,11 @@ static void errorReport(int errorNumber)
 
 static char check_disk(void)
 {
-	/* Check that the filesystem is intact and we have at least DISKCHECK% spare capacity
-	NOTE: DISK FULL LED may flash during a disk check as /dev/hda3 mount check will not
-	be available, this is not an error and light will extinguish once volume has been located */
+	/* Check that the filesystem is intact and we have at least
+	   DISKCHECK% spare capacity NOTE: DISK FULL LED may flash
+	   during a disk check as /dev/hda3 mount check will not be
+	   available, this is not an error and light will extinguish
+	   once volume has been located */
 	static char c_FirstTime=0;
 	static char strRoot[16];
 	static char strWorking[16];
@@ -795,7 +819,10 @@ static char check_disk(void)
 					if (!pos)
 						break;
 
-					/* Increment firsttime check, with bad restarts, /dev/hda3 may not be mounted yet (running a disk check) */
+					/* Increment firsttime check,
+					   with bad restarts, /dev/hda3
+					   may not be mounted yet
+					   (running a disk check) */
 					switch(cmd)
 					{
 						case 0: sprintf(strRoot, "%s", pos); c_FirstTime ++; break;
@@ -807,7 +834,8 @@ static char check_disk(void)
 		close(file);
 	}
 
-	/* Only perform these tests if DISKCHECK is enabled and partition's havev been defined */
+	/* Only perform these tests if DISKCHECK is enabled and
+	 * partition's havev been defined */
 	if (i_checkPercentage > 0 && diskCheckNumber > 0)
 	{
 		errno = -1;
@@ -818,7 +846,8 @@ static char check_disk(void)
 			if (strlen(strRoot)>0)
 			{
 				errno = statfs(strRoot, &mountfs);
-				/* This is okay for ext2/3 but may not be correct for other formats */
+				/* This is okay for ext2/3 but may not
+				 * be correct for other formats */
 				if (0 == errno)
 				{
 					total = 100 - (int)((((double)mountfs.f_bavail/(double)mountfs.f_blocks)*100.0f)+0.99);
@@ -898,7 +927,7 @@ static void parse_timer(char* buff)
 
 static void parse_avr(char* buff)
 {
-	/* Parse the /etc/default/avr_evtd file
+	/* Parse the /etc/default/avr-evtd file
 	Valid options are listed in the command definition below */
 	const char *command[] = {
 			"TIMER",
@@ -1165,13 +1194,15 @@ process:
 
 static void destroyObject(TIMER* pTimer)
 {
-	/* Destroy this object by free-ing up the memory we grabbed through calloc */
+	/* Destroy this object by free-ing up the memory we grabbed
+	 * through calloc */
 	TIMER* pObj;
 
 	/* Ensure valid pointer */
 	if (pTimer)
 	{
-		/* Bad this, can loop but let's destroy and free our objects */
+		/* Bad this, can loop but let's destroy and free our
+		 * objects */
 		for(;;)
 		{
 			pObj = pTimer->pointer;
@@ -1251,7 +1282,8 @@ static void GetTime(long timeNow, TIMER* pTimerLocate, long* time, long defaultT
 		/* Next event for today */
 		onLocated = FindNextToday(timeNow, pTimer, time);
 
-		/* Failed to find a time for today, look for the next power-up time */
+		/* Failed to find a time for today, look for the next
+		 * power-up time */
 		if (0 == onLocated)
 		{
 			pTimer = pTimerLocate;
@@ -1279,7 +1311,7 @@ static void GetTime(long timeNow, TIMER* pTimerLocate, long* time, long defaultT
 #ifdef MIPS
 static void parse_mips(char* buff)
 {
-/*
+	/*
 	type=off
 	backup_status=off
 	backup_time=0:00
@@ -1558,7 +1590,7 @@ static int check_timer(char type)
 		/* File is missing so default to off and do not do this again */
 		c_CommandLineUpdate = 2;
 
-		errno = stat("/etc/default/avr_evtd.config", &filestatus);
+		errno = stat("/etc/default/avr-evtd.config", &filestatus);
 
 		/* If exists? */
 		if (0 == errno)
@@ -1566,7 +1598,7 @@ static int check_timer(char type)
 			/* Has this file changed? */
 			if (filestatus.st_mtime != tt_LastMelcoAcess)
 			{
-				file = open("/etc/default/avr_evtd.config", O_RDONLY);
+				file = open("/etc/default/avr-evtd.config", O_RDONLY);
 
 				if (file)
 				{

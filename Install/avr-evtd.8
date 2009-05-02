@@ -1,19 +1,19 @@
-.TH AVR_EVTD 8 "2 May 2006" 
+.TH AVR-EVTD 8 "2 May 2009"
 
 .SH NAME
 
-avr_evtd - Linkstation AVR Event daemon
+avr-evtd - Linkstation AVR Event daemon
 
-.SH SYNOPSIS 
+.SH SYNOPSIS
 
-avr_evtd [
-.B -d 
+avr-evtd [
+.B -d
 .IR /dev/tty
-] [i | c | v] 
+] [i | c | v]
 
 .SH DESCRIPTION
 
-.IR avr_evtd 
+.IR avr-evtd
 is a simple and small user space interface to the Linkstation AVR
 micro-controller.  It doesn't have a lot of special features, but it's
 main task is to provide 'keep-alive' messages to the Linkstation's
@@ -23,15 +23,15 @@ necessary initialization to the device and also stimulates the LEDs
 depending on various fault conditions.  It also monitors a power button
 (located at the front) and a reset button (located at the rear).
 
-.IR avr_evtd
+.IR avr-evtd
 searches for a configuration file located within
-.B /etc/melco 
-at start-up time. If this file does not exist, then 
-.IR avr_evtd 
-reverts to reading the file located at 
-.B /etc/default/avr_evtd.
-Additionally, 
-.IR avr_evtd
+.B /etc/melco
+at start-up time. If this file does not exist, then
+.IR avr-evtd
+reverts to reading the file located at
+.B /etc/default/avr-evtd.
+Additionally,
+.IR avr-evtd
 may, if requested, periodically check the root (\fBUnder user control
 and could be /dev/hda1\fP) partition and the user working partition
 (\fBFor example, /dev/hda3\fP) to ensure they are mounted.  Also, if
@@ -57,15 +57,15 @@ is updated again at time of power down/shutdown to re-validate the
 timer, in case of time updates (either by user or NTP).  This will also
 preserve the 68 hour sleep resolution.
 
-.SH OPTIONS 
+.SH OPTIONS
 
-.TP 5 
+.TP 5
 .B -d
 .IR /dev/tty
 Specifies the UART device used to communicate with the AVR. This is
 normally taken care of by the scripts but can be specified in the
 configuration file.
-.B See below for details. 
+.B See below for details.
 
 .TP 5
 .B -c
@@ -84,7 +84,7 @@ Display daemon version.
 .SH THE CONFIGURATION FILE
 
 The
-.IR avr_evtd
+.IR avr-evtd
 configuration file is the fallback file in the event that the stock
 melco files do not exist.  The file is read at initial start-up in order
 to determine if timed shutdown is required and if the disk usage is to
@@ -103,7 +103,7 @@ while alternatives are separated by |.
 [ON | OFF]
 
 This is reserved for admin only.  Allows logging of certain information.
-A log file will be maintained in /etc/avr_evtd logging events and when
+A log file will be maintained in /etc/avr-evtd logging events and when
 run from command line, the process will log data to the console.
 
 .TP 5
@@ -300,7 +300,7 @@ alternative cooling must be sourced if this option is selected.
 
 All events, whether mechanical button operation, or software
 reset/shutdown actions are routed through an event script located at
-.B /etc/avr_evtd/EventSCript
+.B /etc/avr-evtd/EventSCript
 
 .TP 5
 
@@ -345,7 +345,7 @@ parameter would be cleared to zero.
 .IR 0
 User has requested (by double press of reset button) to, with the first
 press, launch the telnet daemon, or other client as specified in the
-.IR EventScript.  
+.IR EventScript.
 The script also establishes a static IP to an alias Ethernet device :EM
 at 192.168.11.150.  If this IP is already in-use, then it will not be
 created.  If the Ethernet is not running, then an alternative Ethernet
@@ -355,10 +355,10 @@ and also a DHCP provided IP.  On the
 double press, then a known set of group and user password files are
 copied to /etc.  Prior to the transfer, the relevant original files are
 copied to
-.IR .em.  
+.IR .em.
 A file, recovery.tar, is extracted and the LEDs are flashed to indicate
 this new mode.  A user can now gain root access using the password
-.I emergency 
+.I emergency
 and gain access via the telnet port 1234 to their box.
 
 .TP 5
@@ -445,7 +445,7 @@ operation:
 .TP 5
 
 .IR 1
-No stock or avr_evtd configuration files were located.
+No stock or avr-evtd configuration files were located.
 
 .TP 5
 
@@ -457,7 +457,7 @@ shutdown as timers are re-validated.
 .TP 5
 
 .IR 3
-Timer declaration error in /etc/default/avr_evtd configuration file
+Timer declaration error in /etc/default/avr-evtd configuration file
 
 .TP 5
 
@@ -467,22 +467,22 @@ Error in stock configuration file
 .SH FILES
 
 .RS 0
-.IR /etc/default/avr_evtd
+.IR /etc/default/avr-evtd
 .RE
 .RS 0
-.IR /etc/avr_evtd/EventScript
+.IR /etc/avr-evtd/EventScript
 .RE
 .RS 0
-.IR /etc/avr_evtd/emergency_eth0
+.IR /etc/avr-evtd/emergency-eth0
 .RE
 .RS 0
 .IR /etc/default/events.log
 .RE
 .RS 0
-.IR /etc/avr_evtd/recovery.tar
+.IR /etc/avr-evtd/recovery.tar
 .RE
 
-.SH AUTHOR 
+.SH AUTHOR
 
 Bob Perry <lb-source@users.sourceforge.net> (2006), with small
 modifications by Rogerio Brito <rbrito@users.sourceforge.net> (2008).
