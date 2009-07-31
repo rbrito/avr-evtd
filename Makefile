@@ -8,34 +8,32 @@ TITLE=Linkstation AVR Event daemon
 #
 # User configurable variables
 #
-CC = cc
-CFLAGS = -Wall -Wextra -Os
 # Add -DUBOOT to the build process if you are using U-Boot as this will
 # remove the redundant EM-Mode NGNGNG poke into flash
-
+#
+CC = cc
+CFLAGS = -Wall -Wextra -Os
+CFLAGS += -DUBOOT
 
 ######################################################################
 # Almost no user should need to change the contents below
 ######################################################################
 # We have the option to build the daemon for PPC or MIPS
-#
-# FIXME: Why separate build locations? Why ship binaries? - rbrito
-BUILD_LOCATION = PPC
 
 MACHINE = $(shell uname -m)
 ifeq (${MACHINE}, mips)
-  BUILD_CPU=-DMIPS
-  BUILD_LOCATION=MIPS
+  CFLAGS += -DMIPS
+endif
+
+ifneq (, $(shell test /etc/melco))
+  CFLAGS += -DNO_MELCO
 endif
 
 # Main targets
 all: avr-evtd
 
 avr-evtd: avr-evtd.c
-	test -d /etc/melco || \
-	$(CC) $(CFLAGS) -o $(BUILD_LOCATION)/avr-evtd avr-evtd.c $(BUILD_CPU) -DNO_MELCO
-	test ! -d /etc/melco || \
-	$(CC) $(CFLAGS) -o $(BUILD_LOCATION)/avr-evtd avr-evtd.c $(BUILD_CPU)
+	$(CC) $(CFLAGS) -o avr-evtd avr-evtd.c
 
 clean: avr-evtd
 	rm -f avr-evtd
@@ -51,7 +49,7 @@ install: avr-evtd
 	install -m 755    Install/avr-evtd.init /etc/init.d/avr-evtd
 
 	# ENSURE LOCAL DIRECTORY EXISTS AND UPDATE EXECUTABLE
-	install -D -m 755 $(BUILD_LOCATION)/avr-evtd /usr/local/sbin
+	install -D -m 755 avr-evtd /usr/local/sbin
 
 	# TRANSFER EVENT SCRIPT
 	install -D -m 755 Install/EventScript /etc/avr-evtd/EventScript
