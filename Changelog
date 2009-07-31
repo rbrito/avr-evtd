@@ -1,3 +1,7 @@
+92		Changes to the building system (fixes the Melco detection etc).
+		Changes to the building system (respects DESTDIR).
+		Changes to the directory layout.
+		Convert occurrences of avr_evtd to avr-evtd.
 50		Changes to configuration filename.
 22		Inclusion in the sourceforge repository and small bugfixes.
 V1.7.2	Script changes.  Additions to run script in background and
