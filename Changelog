@@ -1,9 +1,13 @@
-92		Changes to the building system (fixes the Melco detection etc).
+V1.7.4		Changes to the building system (fixes the Melco detection etc).
 		Changes to the building system (respects DESTDIR).
 		Changes to the directory layout.
+		Fix the init script so that it works with dependency-based
+		    boot systems.
 		Convert occurrences of avr_evtd to avr-evtd.
-50		Changes to configuration filename.
+
+V1.7.3		Changes to configuration filename.
 22		Inclusion in the sourceforge repository and small bugfixes.
+
 V1.7.2	Script changes.  Additions to run script in background and
 		added 5 minute shutdown event and moved other event messages
 		to the system.
