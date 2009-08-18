@@ -40,7 +40,7 @@ all: avr-evtd
 avr-evtd: avr-evtd.c
 	$(CC) $(CFLAGS) -o avr-evtd avr-evtd.c
 
-clean: avr-evtd
+clean:
 	rm -f avr-evtd
 	rm -f /etc/init.d/avr-evtd
 	rm -f /etc/default/avr-evtd.sample
