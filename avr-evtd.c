@@ -958,7 +958,7 @@ static void parse_avr(char *buff)
 	};
 
 	char *pos;
-	char *last;		/* Used by strtoc_r to point to current token */
+	char *last;		/* Used by strtok_r to point to current token */
 	int i, j;
 	int cmd;
 	int iHour;
