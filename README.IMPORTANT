@@ -8,4 +8,4 @@ to the flash memory and a reboot is issued.  At this point, the box is
 now in EM-Mode as it has booted from ram flash and not HDD image.
 
 PLEASE NOTE, THIS IS FOR USE ONLY BY THOSE WHO ARE AWARE OF THE ISSUES
-OF ENTERING EM-MODE.  DO NOT USE OTHERWISE YOU HDD DATA IS AT RISK.
+OF ENTERING EM-MODE.  DO NOT USE OTHERWISE YOUR HDD DATA IS AT RISK.

@@ -1,6 +1,6 @@
 AVR EVENT DAEMON (PPC-EVTD)
-Copyright 2006      Bob Perry <lb-source@users.sf.net>
-Copyright 2008,2009 Rogério Brito <rbrito@users.sf.net>
+Copyright 2006       Bob Perry <lb-source@users.sf.net>
+Copyright 2008, 2009  Rogério Brito <rbrito@users.sf.net>
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -144,4 +144,4 @@ This is free software for Linkstation/kuro fans and lovers!
 
 Please just mention my name if modified or linked to.
 Bob Perry (UK) JUNE 2006.
-Rogério Brito July 2009.
+Rogério Brito Aug 2009.
