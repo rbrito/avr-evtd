@@ -1,16 +1,16 @@
 #!/bin/sh
 #
-# avr_evtd Linkstation/Kuro AVR daemon
+# avr-evtd Linkstation/Kuro AVR daemon
 #
 # Other files used are:
-#  /etc/default/avr_evtd - Optional configuration file
-#  /etc/avr_evtd/EventScript - Provides user with scripted
+#  /etc/default/avr-evtd - Optional configuration file
+#  /etc/avr-evtd/EventScript - Provides user with scripted
 #                              AVR event points
 # Optional files:
 #  /etc/melco/timer_Sleep - Standard Melco sleep settings
 #
 # Written by Bob Perry (2006) <lb-source@users.sourceforge.net>
-# Modifications by Rogério Brito (2008,2009) <rbrito@ime.usp.br>
+# Modifications by Rogério Brito (2008, 2009) <rbrito@ime.usp.br>
 #
 
 ### BEGIN INIT INFO
@@ -24,8 +24,8 @@
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
-DAEMON=/usr/sbin/avr_evtd
-NAME="avr_evtd"
+DAEMON=/usr/sbin/avr-evtd
+NAME="avr-evtd"
 DESC="AVR watchdog daemon"
 tag=linkstation
 facility=user.info
@@ -56,7 +56,9 @@ getDevice()
 	DEVICE=/dev/ttyS0
         # Search for valid port address
 	PORT_ADDRESS=`$DAEMON -i -d /dev/ttyS1`
-	if [ $PORT_ADDRESS -eq 80004500 ]; then DEVICE=/dev/ttyS1 ; fi
+	if [ -z "$PORT_ADDRESS" ] && [ "$PORT_ADDRESS" = "0x80004500" ]; then
+	    DEVICE=/dev/ttyS1
+	fi
     fi
 }
 
@@ -89,13 +91,13 @@ start()
     fi
 
     if [ "$CONSOLE" = "ON" ]; then
-	echo "[avr_evtd]: Not started services as console in-use"
-	logger -t $tag -p $facility -i 'Not started avr_evtd as kernel still has console'
+	echo "[avr-evtd]: Not started services as console in-use"
+	logger -t $tag -p $facility -i 'Not started avr-evtd as kernel still has console'
     else
 	log_daemon_msg "Starting $DESC " "$NAME"
 	start-stop-daemon --start --quiet --exec $DAEMON -- $daemonoptions
 	log_end_msg $?
-	logger -t $tag -p $facility -i 'Started daemon avr_evtd'
+	logger -t $tag -p $facility -i 'Started daemon avr-evtd'
     fi
 }
 
@@ -118,26 +120,26 @@ stop()
     log_daemon_msg "Stopping $DESC" "$NAME"
     start-stop-daemon --stop --quiet --exec $DAEMON
     log_end_msg $?
-    logger -t $tag -p $facility -i 'Stopped daemon avr_evtd'
+    logger -t $tag -p $facility -i 'Stopped daemon avr-evtd'
 }
 
 # Check request
 case "$1" in
-  start)
-    start
-    ;;
-  stop)
-    stop
-    ;;
-  restart|force-reload)
-    stop
-    sleep 1
-    start
-    ;;
-  *)
-    echo "Usage: $DAEMON {start|stop|restart|force-reload}" >&2
-    exit 1
-    ;;
+    start)
+	start
+	;;
+    stop)
+	stop
+	;;
+    restart|force-reload)
+	stop
+	sleep 1
+	start
+	;;
+    *)
+	echo "Usage: $DAEMON {start|stop|restart|force-reload}" >&2
+	exit 1
+	;;
 esac
 
 exit 0
