@@ -1624,27 +1624,27 @@ static int check_timer(char type)
 			/* Update our lasttimes timer file access */
 			LastMelcoAccess = filestatus.st_mtime;
 		} else {	/* standard Melco files do not exist,
-				 * back to the avr_evtd defaults */
+				 * back to the avr-evtd defaults */
 			LastMelcoAccess = 0;
 			CommandLineUpdate = 1;
 		}
 	}
 #endif
 
-	/* Time from avr_evtd configuration file */
+	/* Time from avr-evtd configuration file */
 	if (1 == CommandLineUpdate) {
 		/* File is missing so default to off and do not do this
 		 * again */
 		CommandLineUpdate = 2;
 
-		errno = stat("/etc/default/avr-evtd.config", &filestatus);
+		errno = stat("/etc/default/avr-evtd", &filestatus);
 
 		/* If exists? */
 		if (0 == errno) {
 			/* Has this file changed? */
 			if (filestatus.st_mtime != LastMelcoAccess) {
 				file =
-				    open("/etc/default/avr-evtd.config",
+				    open("/etc/default/avr-evtd",
 					 O_RDONLY);
 
 				if (file) {
