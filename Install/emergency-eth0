@@ -8,6 +8,6 @@ iface eth0 inet static
      gateway 192.168.11.254
 
 iface eth0:AUTO inet dhcp
-hostname `hostname`
+      hostname `hostname`
 
 auto eth0 eth0:AUTO
