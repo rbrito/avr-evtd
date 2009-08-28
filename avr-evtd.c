@@ -78,6 +78,8 @@ char avr_device[] = "/dev/ttyS0";
 char avr_device[] = "/dev/ttyS1";
 #endif
 
+char config_file_location[] = "/etc/default/avr-evtd";
+
 TIMER *offTimer = NULL;
 TIMER *onTimer = NULL;
 int FileDescriptor = 0;
@@ -1637,14 +1639,14 @@ static int check_timer(char type)
 		 * again */
 		CommandLineUpdate = 2;
 
-		errno = stat("/etc/default/avr-evtd", &filestatus);
+		errno = stat(config_file_location, &filestatus);
 
 		/* If exists? */
 		if (0 == errno) {
 			/* Has this file changed? */
 			if (filestatus.st_mtime != LastMelcoAccess) {
 				file =
-				    open("/etc/default/avr-evtd",
+				    open(config_file_location,
 					 O_RDONLY);
 
 				if (file) {
