@@ -73,9 +73,9 @@ typedef struct _OFF_TIMER {
 
 /* Some global variables */
 #ifdef MIPS
-char avr_device[] = "/dev/ttyS0";
+static char avr_device[] = "/dev/ttyS0";
 #else
-char avr_device[] = "/dev/ttyS1";
+static char avr_device[] = "/dev/ttyS1";
 #endif
 
 char config_file_location[] = "/etc/default/avr-evtd";
