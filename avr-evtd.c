@@ -108,8 +108,7 @@ int checkState = 1;		/* Will force an update within 15
 				 * seconds of starting up to resolve
 				 * those pushed out refresh times */
 char em_mode = 0;
-const char strVersion[] =
-    "Linkstation/Kuro AVR daemon Revision $Rev$\n";
+const char strVersion[] = "Linkstation/Kuro AVR daemon $Rev$\n";
 char rootPartition[10] = "";	/* Default, no defaults for both root
 				 * and working partitions */
 char workingPartition[10] = "";
@@ -150,14 +149,16 @@ static void errorReport(int errorNumber);
 static void execute_command1(char cmd);
 static void execute_command(char cmd, int cmd2);
 
-static char *program_name = argv[0];
-
 static void usage(void)
 {
-	fprintf(stderr,
-		"Usage:\n\t%s [-d <device>] [-d | -i | -v]\n",
-		program_name);
-	exit(1);
+	printf("Usage: avr-evtd [OPTION...]\n");
+#ifndef MIPS
+	printf("  -d DEVICE     listen for events on DEVICE\n");
+	printf("  -i            display memory location for device used with -d\n");
+#endif
+	printf("  -c            run in the foreground, not as a daemon\n");
+	printf("  -v            display program version\n");
+	exit(0);
 }
 
 static void writeUART(char output)
@@ -729,11 +730,13 @@ int main(int argc, char *argv[])
 			--argc;
 			printf("%s", strVersion);
 			exit(0);
-			break;
 		case 'e':
 			--argc;
 			em_mode = 1;
 			break;
+		case 'h':
+			usage();
+			exit(0);
 		default:
 			usage();
 		}
