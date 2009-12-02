@@ -138,11 +138,9 @@ static void avr_evtd_main(void);
 static char check_disk(void) __attribute__ ((always_inline));
 static void set_avr_timer(char type);
 static void parse_avr(char *buff);
-static void GetTime(long timeNow, TIMER * pTimerLocate, long *time,
-		    long defaultTime);
+static void GetTime(long timeNow, TIMER * pTimerLocate, long *time, long defaultTime);
 static int FindNextToday(long timeNow, TIMER * pTimer, long *time);
-static int FindNextDay(long timeNow, TIMER * pTimer, long *time,
-		       long *offset);
+static int FindNextDay(long timeNow, TIMER * pTimer, long *time, long *offset);
 static void destroyObject(TIMER * pTimer);
 static void writeUART(char output);
 static void errorReport(int errorNumber);
@@ -172,8 +170,7 @@ static void writeUART(char output)
 
 static int open_serial(char *device)
 {
-	/* Establish connection to comport and initialise the port as
-	 * required */
+	/* Establish connection to comport and initialise it */
 	struct termios newtio;
 
 #ifndef MIPS
@@ -187,6 +184,7 @@ static int open_serial(char *device)
 		perror(device);
 		return -1;
 	}
+
 #ifndef MIPS
 	/* Requested device memory address? */
 	if (2 == debug) {
@@ -469,8 +467,7 @@ static void avr_evtd_main(void)
 #ifdef DEBUG
 			default:
 				if (buf[0] != 0)
-					syslog(LOG_INFO,
-					       "unknown message %X[%d]",
+					syslog(LOG_INFO, "unknown message %X[%d]",
 					       buf[0], iResult);
 				break;
 #endif
@@ -519,47 +516,34 @@ static void avr_evtd_main(void)
 			}
 #endif
 			/* Skip this processing during power/reset scan */
-			if (!PushedResetFlag && !PushedPowerFlag
-			    && FirstTimeFlag < 2) {
+			if (!PushedResetFlag && !PushedPowerFlag && FirstTimeFlag < 2) {
 				/* shutdown timer event? */
 				if (1 == TimerFlag) {
 					/* Decrement our powerdown timer */
 					if (ShutdownTimer > 0) {
-						lTimerDiff =
-						    (tt_TimeNow -
-						     tt_LastShutdownPing);
+						lTimerDiff = (tt_TimeNow - tt_LastShutdownPing);
 
-						/* If time difference is
-						 * more than a minute,
-						 * force a
-						 * re-calculation of
-						 * shutdown time */
-						if (refreshRate + 60 >
-						    abs(lTimerDiff)) {
-							ShutdownTimer -=
-							    lTimerDiff;
+						/* If time difference is more than a minute,
+						 * force a re-calculation of shutdown time */
+						if (refreshRate + 60 > abs(lTimerDiff)) {
+							ShutdownTimer -= lTimerDiff;
 
 							/* Within five
 							 * minutes of
 							 * shutdown? */
-							if (ShutdownTimer <
-							    FIVE_MINUTES) {
+							if (ShutdownTimer < FIVE_MINUTES) {
 								if (FirstTimeFlag) {
-									FirstTimeFlag
-									    =
-									    0;
+									FirstTimeFlag = 0;
 
 									/* Inform the EventScript */
-									execute_command
-									    (FIVE_SHUTDOWN,
+									execute_command(FIVE_SHUTDOWN,
 									     ShutdownTimer);
 
 									/* Re-validate out time
 									   wake-up; do not perform
 									   if in extra time */
 									if (!extraTime)
-										set_avr_timer
-										    (1);
+										set_avr_timer(1);
 								}
 							}
 						}
@@ -574,10 +558,8 @@ static void avr_evtd_main(void)
 					} else {
 						/* Prevent re-entry and
 						 * execute command */
-						PushedPowerFlag =
-						    PressedResetFlag = 2;
-						execute_command1
-						    (TIMED_SHUTDOWN);
+						PushedPowerFlag =  PressedResetFlag = 2;
+						execute_command1(TIMED_SHUTDOWN);
 					}
 				}
 
@@ -585,8 +567,7 @@ static void avr_evtd_main(void)
 				tt_LastShutdownPing = time(NULL);
 
 				/* Split loading, handle disk checks
-				 * over a number of cycles, reduce CPU
-				 * hog */
+				 * over a number of cycles, reduce CPU hog */
 				switch (checkState) {
 					/* Kick state machine */
 				case 0:
@@ -612,8 +593,7 @@ static void avr_evtd_main(void)
 					if ((currentStatus = check_disk())) {
 						/* Execute some user code on disk full */
 						if (FirstWarning) {
-							FirstWarning =
-							    pesterMessage;
+							FirstWarning = pesterMessage;
 							execute_command
 							    (DISK_FULL,
 							     diskUsed);
@@ -659,8 +639,7 @@ static void avr_evtd_main(void)
 			case 2:
 			case 3:
 			case 4:
-				if ((tt_fault_time + fanFaultSeize) <
-				    tt_TimeNow) {
+				if ((tt_fault_time + fanFaultSeize) < tt_TimeNow) {
 					/* Run some user script on no
 					 * fan restart message after
 					 * FAN_FAULT_SEIZE time */
@@ -671,10 +650,8 @@ static void avr_evtd_main(void)
 				break;
 				/* Fan sped up message received */
 			case 6:
-				/* Attempt to slow fan down again after
-				 * 5 minutes */
-				if ((tt_fault_time + FIVE_MINUTES) <
-				    tt_TimeNow) {
+				/* Attempt to slow fan down again after 5 minutes */
+				if ((tt_fault_time + FIVE_MINUTES) < tt_TimeNow) {
 					writeUART(0x5C);
 					fan_fault = 1;
 				}
