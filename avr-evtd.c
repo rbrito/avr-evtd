@@ -108,7 +108,7 @@ int checkState = 1;		/* Will force an update within 15
 				 * seconds of starting up to resolve
 				 * those pushed out refresh times */
 char em_mode = 0;
-const char strVersion[] = "Linkstation/Kuro AVR daemon $Rev$\n";
+const char version[] = "Linkstation/Kuro AVR daemon $Rev$\n";
 char rootPartition[10] = "";	/* Default, no defaults for both root
 				 * and working partitions */
 char workingPartition[10] = "";
@@ -728,7 +728,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'v':
 			--argc;
-			printf("%s", strVersion);
+			printf("%s", version);
 			exit(0);
 		case 'e':
 			--argc;
@@ -781,7 +781,7 @@ int main(int argc, char *argv[])
 	openlog("avr-daemon", LOG_PID | LOG_NOWAIT | LOG_CONS,
 		LOG_WARNING);
 
-	syslog(LOG_INFO, "%s", strVersion);
+	syslog(LOG_INFO, "%s", version);
 
 	/* Our main */
 	avr_evtd_main();
