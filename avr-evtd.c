@@ -119,6 +119,7 @@ char resetPresses = 0;
 int diskUsed = 0;
 
 /* Declarations */
+static void usage(void);
 static int check_timer(char type);
 static void termination_handler(int signum);
 static int open_serial(char *device) __attribute__ ((always_inline));
@@ -148,6 +149,16 @@ static void writeUART(char output);
 static void errorReport(int errorNumber);
 static void execute_command1(char cmd);
 static void execute_command(char cmd, int cmd2);
+
+static char *program_name = argv[0];
+
+static void usage(void)
+{
+	fprintf(stderr,
+		"Usage:\n\t%s [-d <device>] [-d | -i | -v]\n",
+		program_name);
+	exit(1);
+}
 
 static void writeUART(char output)
 {
@@ -723,6 +734,8 @@ int main(int argc, char *argv[])
 			--argc;
 			em_mode = 1;
 			break;
+		default:
+			usage();
 		}
 		argc--;
 		argv++;
