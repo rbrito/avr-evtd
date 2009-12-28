@@ -142,7 +142,7 @@ static void GetTime(long timeNow, TIMER * pTimerLocate, long *time, long default
 static int FindNextToday(long timeNow, TIMER * pTimer, long *time);
 static int FindNextDay(long timeNow, TIMER * pTimer, long *time, long *offset);
 static void destroyObject(TIMER * pTimer);
-static void writeUART(char output);
+static void writeUART(char);
 static void errorReport(int errorNumber);
 static void execute_command1(char cmd);
 static void execute_command(char cmd, int cmd2);
@@ -159,13 +159,12 @@ static void usage(void)
 	exit(0);
 }
 
-static void writeUART(char output)
+/* Handle ALL UART messages from a central point, reduce code overhead */
+static void writeUART(char output_)
 {
-	/* Handle ALL UART messages from a central point, reduce code
-	 * overhead */
-	char strOutput[4];
-	strOutput[0] = strOutput[1] = strOutput[2] = strOutput[3] = output;
-	write(FileDescriptor, strOutput, 4);
+	char output[4];
+	output[0] = output[1] = output[2] = output[3] = output_;
+	write(FileDescriptor, output, 4);
 }
 
 static int open_serial(char *device)
