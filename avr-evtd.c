@@ -167,9 +167,9 @@ static void writeUART(char output_)
 	write(FileDescriptor, output, 4);
 }
 
+/* Establish connection to serial port and initialise it */
 static int open_serial(char *device)
 {
-	/* Establish connection to comport and initialise it */
 	struct termios newtio;
 
 #ifndef MIPS
@@ -263,24 +263,27 @@ static void termination_handler(int signum)
 	}
 }
 
+
+/* Execute event script handler with the appropriate commands */
 static void execute_command(char cmd, int cmd2)
 {
 	char strEventScript[45];
 
-	/* Send device info to the event script handler */
 	sprintf(strEventScript, "/etc/avr-evtd/EventScript %c %s %d &",
 		cmd, avr_device, cmd2);
 	system(strEventScript);
 }
+
 
 static void execute_command1(char cmd)
 {
 	execute_command(cmd, 0);
 }
 
+
+/* Our main entry, decode requests and monitor activity */
 static void avr_evtd_main(void)
 {
-	/* Our main entry, decode requests and monitor activity */
 	char buf[17];
 	char cmd;
 	char PushedPowerFlag = 0;
@@ -675,6 +678,7 @@ static void avr_evtd_main(void)
 	}
 }
 
+
 int main(int argc, char *argv[])
 {
 	char *thisarg;
@@ -765,10 +769,12 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+
 static void errorReport(int errorNumber)
 {
 	execute_command(ERRORED, errorNumber);
 }
+
 
 static char check_disk(void)
 {
@@ -931,10 +937,10 @@ static void parse_timer(char *buff)
 
 #endif
 
+
+/* Parse configuration file /etc/default/avr-evtd */
 static void parse_avr(char *buff)
 {
-	/* Parse the /etc/default/avr-evtd file
-	   Valid options are listed in the command definition below */
 	const char *command[] = {
 		"TIMER",
 		"SHUTDOWN",
@@ -1226,6 +1232,7 @@ static void parse_avr(char *buff)
 	}
 }
 
+
 static void destroyObject(TIMER * pTimer)
 {
 	/* Destroy this object by free-ing up the memory we grabbed
@@ -1249,6 +1256,7 @@ static void destroyObject(TIMER * pTimer)
 	}
 }
 
+
 static int FindNextToday(long timeNow, TIMER * pTimer, long *time)
 {
 	/* Scan macro objects for a valid event from 'time' today */
@@ -1268,8 +1276,8 @@ static int FindNextToday(long timeNow, TIMER * pTimer, long *time)
 	return iLocated;
 }
 
-static int FindNextDay(long timeNow, TIMER * pTimer, long *time,
-		       long *offset)
+
+static int FindNextDay(long timeNow, TIMER * pTimer, long *time, long *offset)
 {
 	/* Locate the next valid event */
 	int iLocated = 0;
@@ -1294,8 +1302,8 @@ static int FindNextDay(long timeNow, TIMER * pTimer, long *time,
 	return iLocated;
 }
 
-static void GetTime(long timeNow, TIMER * pTimerLocate, long *time,
-		    long defaultTime)
+
+static void GetTime(long timeNow, TIMER * pTimerLocate, long *time, long defaultTime)
 {
 	/* Get next timed macro event */
 	long lOffset = 0;
@@ -1544,6 +1552,7 @@ static void set_avr_timer(char type)
 
 	writeUART(keepAlive);
 }
+
 
 static int check_timer(char type)
 {
