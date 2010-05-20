@@ -39,7 +39,6 @@ fi
 
 determine_device()
 {
-    # Load custom settings
     MIPS=NO
 
     # Try to determine the UART used.  The MIPS only has one UART available
@@ -75,8 +74,7 @@ start()
     fi
   
     if [ -n "$DEVICE" ] && [ "$MIPS" = "NO" ]; then
-	[ -n "$daemonoptions" ] && daemonoptions="$daemonoptions "
-	daemonoptions="$daemonoptions-d $DEVICE"
+	daemonoptions="$daemonoptions -d $DEVICE"
     fi
 
     # Is this a MIPSEL box?
