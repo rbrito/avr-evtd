@@ -24,8 +24,8 @@
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
-DAEMON=/usr/sbin/avr-evtd
-NAME="avr-evtd"
+NAME=avr-evtd
+DAEMON=/usr/sbin/$NAME
 DESC="AVR watchdog daemon"
 tag=linkstation
 facility=user.info
@@ -33,29 +33,26 @@ facility=user.info
 test -x $DAEMON || exit 0
 . /lib/lsb/init-functions
 
-getDevice()
+if [ -f /etc/default/$NAME ]; then
+    . /etc/default/$NAME
+fi
+
+determine_device()
 {
-    #
     # Load custom settings
-    #
     MIPS=NO
 
-    # Include defaults if available
-    if [ -f /etc/default/$NAME ] ; then
-	. /etc/default/$NAME
-    fi
-
-    # Try and determine the UART used.  The MIPS only has one UART
-    # available and the process is built accordingly.  To support modified
-    # kernel's/kuro systems with polled over UARTs, drill into kernel
-    # configuration for the memory configuration of the UART to determine
-    # which tty to use if not set in the configuration file
+    # Try to determine the UART used.  The MIPS only has one UART available
+    # and the process is built accordingly.  To support modified kernels/kuro
+    # systems with polled over UARTs, drill into kernel configuration for the
+    # memory configuration of the UART to determine which tty to use if not
+    # set in the configuration file
     uname -m | grep -q mips && MIPS=YES && DEVICE=/dev/ttyS0
 
     if [ -z "$DEVICE" ] && [ "$MIPS" = "NO" ]; then
 	DEVICE=/dev/ttyS0
         # Search for valid port address
-	PORT_ADDRESS=`$DAEMON -i -d /dev/ttyS1`
+	PORT_ADDRESS=$($DAEMON -i -d /dev/ttyS1)
 	if [ -z "$PORT_ADDRESS" ] && [ "$PORT_ADDRESS" = "0x80004500" ]; then
 	    DEVICE=/dev/ttyS1
 	fi
@@ -64,18 +61,18 @@ getDevice()
 
 start()
 {
-    #
-    # Daemon options
-    # e.g -d /dev/ttyS1
-    #
+    # Cumulative string of options to be passed to the daemon
+    # (e.g -d /dev/ttyS1)
     daemonoptions=
 
     CONSOLE=OFF
   
-    getDevice
+    determine_device
   
-    # Establish daemon startup options based on configuration settings
-    if [ "$EMMODE" = "YES" ]; then daemonoptions=-e ; fi
+    # Initialize according to configurations
+    if [ "$EMMODE" = "YES" ]; then
+	daemonoptions=-e
+    fi
   
     if [ -n "$DEVICE" ] && [ "$MIPS" = "NO" ]; then
 	[ -n "$daemonoptions" ] && daemonoptions="$daemonoptions "
@@ -86,7 +83,7 @@ start()
     if [ "$MIPS" = "YES" ]; then
 	if [ -e /proc/linkstation ]; then
             # Determine if console ttyS0 is in-use
-	    CONSOLE=`cat /proc/linkstation | grep CONSOLE | awk -F "=" '{print $2}'`
+	    CONSOLE=$(cat /proc/linkstation | grep CONSOLE | awk -F "=" '{print $2}')
 	fi
     fi
 
@@ -103,7 +100,7 @@ start()
 
 stop()
 {
-    getDevice
+    determine_device
  
     # Determine run-level and respond accordingly
     # Speed-up fan at exit for an extra chill.
