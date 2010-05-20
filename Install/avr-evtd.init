@@ -9,8 +9,8 @@
 # Optional files:
 #  /etc/melco/timer_Sleep - Standard Melco sleep settings
 #
-# Written by Bob Perry (2006) <lb-source@users.sourceforge.net>
-# Modifications by Rogério Brito (2008, 2009) <rbrito@ime.usp.br>
+# Copyright © 2006 Bob Perry <lb-source@users.sourceforge.net>
+# Copyright © 2008-2010 Rogério Brito <rbrito@ime.usp.br>
 #
 
 ### BEGIN INIT INFO
