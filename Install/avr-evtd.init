@@ -2,12 +2,12 @@
 #
 # avr-evtd Linkstation/Kuro AVR daemon
 #
-# Other files used are:
-#  /etc/default/avr-evtd - Optional configuration file
-#  /etc/avr-evtd/EventScript - Provides user with scripted
-#                              AVR event points
+# Files used:
+#  /etc/default/avr-evtd	file with defaults for this script
+#  /etc/avr-evtd/EventScript	script with emergency mode actions
+#
 # Optional files:
-#  /etc/melco/timer_Sleep - Standard Melco sleep settings
+#  /etc/melco/timer_Sleep	Standard Melco sleep settings
 #
 # Copyright © 2006 Bob Perry <lb-source@users.sourceforge.net>
 # Copyright © 2008-2010 Rogério Brito <rbrito@ime.usp.br>
