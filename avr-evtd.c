@@ -149,13 +149,14 @@ static void execute_command(char cmd, int cmd2);
 
 static void usage(void)
 {
-	printf("Usage: avr-evtd [OPTION...]\n");
+	printf("Usage: avr-evtd [OPTION...]\n"
 #ifndef MIPS
-	printf("  -d DEVICE     listen for events on DEVICE\n");
-	printf("  -i            display memory location for device used with -d\n");
+	       "  -d DEVICE     listen for events on DEVICE\n"
+	       "  -i            display memory location for device used with -d\n"
 #endif
-	printf("  -c            run in the foreground, not as a daemon\n");
-	printf("  -v            display program version\n");
+	       "  -c            run in the foreground, not as a daemon\n"
+	       "  -v            display program version\n"
+	       "  -h            display this usage notice\n");
 	exit(0);
 }
 
