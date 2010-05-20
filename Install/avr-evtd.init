@@ -39,20 +39,16 @@ fi
 
 determine_device()
 {
-    MIPS=NO
+    # Accept the device specified by the system administrator, if set.
+    [ ! -z "$DEVICE" ] && return
 
-    # Try to determine the UART used.  The MIPS only has one UART available
-    # and the process is built accordingly.  To support modified kernels/kuro
-    # systems with polled over UARTs, drill into kernel configuration for the
-    # memory configuration of the UART to determine which tty to use if not
-    # set in the configuration file
-    uname -m | grep -q mips && MIPS=YES && DEVICE=/dev/ttyS0
-
-    if [ -z "$DEVICE" ] && [ "$MIPS" = "NO" ]; then
-	DEVICE=/dev/ttyS0
-        # Search for valid port address
+    # For MIPS, the situation is simpler: just use /dev/ttyS0 as the UART.
+    # For PowerPC, we need to know which, between ttyS0 or ttyS1 is attached
+    # to port address 0x800045000 and use that.
+    DEVICE=/dev/ttyS0
+    if [ uname -m | grep -q ppc ]; then
 	PORT_ADDRESS=$($DAEMON -i -d /dev/ttyS1)
-	if [ -z "$PORT_ADDRESS" ] && [ "$PORT_ADDRESS" = "0x80004500" ]; then
+	if [ -n "$PORT_ADDRESS" ] && [ "$PORT_ADDRESS" = "0x80004500" ]; then
 	    DEVICE=/dev/ttyS1
 	fi
     fi
