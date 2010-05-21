@@ -44,9 +44,9 @@ determine_device()
 
     # For MIPS, the situation is simpler: just use /dev/ttyS0 as the UART.
     # For PowerPC, we need to know which, between ttyS0 or ttyS1 is attached
-    # to port address 0x800045000 and use that.
+    # to port address 0x80004500 and use that.
     DEVICE=/dev/ttyS0
-    if [ uname -m | grep -q mips ]; then
+    if uname -m | grep -q mips; then
 	MIPS=YES
     else
 	MIPS=NO
@@ -61,17 +61,17 @@ start()
 {
     # Cumulative string of options to be passed to the daemon
     # (e.g -d /dev/ttyS1)
-    DAEMONOPTS=
+    DAEMONOPTS=""
 
     CONSOLE=OFF
-  
+
     determine_device
-  
+
     # Initialize according to configurations
     if [ "$EMMODE" = "YES" ]; then
 	DAEMONOPTS=-e
     fi
-  
+
     if [ -n "$DEVICE" ] && [ "$MIPS" = "NO" ]; then
 	DAEMONOPTS="$DAEMONOPTS -d $DEVICE"
     fi
@@ -95,7 +95,7 @@ start()
 stop()
 {
     determine_device
- 
+
     # Determine run-level and respond accordingly
     # Speed-up fan at exit for an extra chill.
     if [ -n "$RUNLEVEL" ] && [ -n "$DEVICE" ]; then
