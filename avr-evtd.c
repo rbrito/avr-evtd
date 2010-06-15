@@ -262,7 +262,6 @@ static void termination_handler(int signum)
 	case SIGTERM:
 		close_serial();
 		exit(0);
-		break;
 	case SIGCONT:
 		break;
 	default:
