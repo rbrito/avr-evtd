@@ -64,6 +64,9 @@
 #define FIVE_SHUTDOWN		'S'
 #define ERRORED			'D'
 
+/* Constants for readable code */
+#define COMMENT_PREFIX		'#'
+
 /* Macro event object definition */
 struct event {
 	int day;		/* Event day */
@@ -972,8 +975,7 @@ static void parse_avr(char *buff)
 	for (i = 0; i < 200; i++) {
 		cmd = -1;
 
-		/* Ignore comment lines? */
-		if ('#' != pos[0]) {
+		if (pos[0] != COMMENT_PREFIX) {
 			/* Could return groups, say MON-THR, need to
 			 * strip '-' out */
 			if ('-' == pos[3]) {
@@ -995,7 +997,7 @@ static void parse_avr(char *buff)
 			/* After the first remark we have ignored, make
 			 * sure we detect a valid line and move the
 			 * tokeniser pointer if none remark field */
-			if ('#' != pos[0]) {
+			if (pos[0] != COMMENT_PREFIX) {
 				j = strlen(pos);
 				*(last - 1) = (char) ',';	/* Plug the '0' with token parameter  */
 				last = last - (j + 1);
@@ -1008,7 +1010,7 @@ static void parse_avr(char *buff)
 		if (!pos)
 			break;
 
-		if ('#' == pos[0])
+		if (pos[0] == COMMENT_PREFIX)
 			cmd = -1;
 
 		/* Now parse the setting */
