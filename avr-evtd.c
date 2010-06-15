@@ -716,10 +716,12 @@ int main(int argc, char *argv[])
 	} else if (1 == debug)
 		check_timer(0);
 
-	/* Set up termination handlers */
-	signal(SIGTSTP, SIG_IGN);	/* ignore tty signals */
+	/* ignore tty signals */
+	signal(SIGTSTP, SIG_IGN);
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGCHLD, SIG_IGN);
+
+	/* Set up termination handlers */
 	signal(SIGTERM, termination_handler);
 	signal(SIGCONT, termination_handler);
 	signal(SIGINT, termination_handler);
@@ -742,8 +744,7 @@ int main(int argc, char *argv[])
 	umask(0);
 
 	/* Open logger for this daemon */
-	openlog("avr-daemon", LOG_PID | LOG_NOWAIT | LOG_CONS,
-		LOG_WARNING);
+	openlog("avr-daemon", LOG_PID | LOG_NOWAIT | LOG_CONS, LOG_WARNING);
 
 	syslog(LOG_INFO, "%s", version);
 
