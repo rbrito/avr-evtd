@@ -71,7 +71,7 @@ struct event {
 	struct event *pointer;	/* Pointer to next event */
 };
 
-typedef struct event TIMER;
+typedef struct event event;
 
 /* Some global variables */
 #ifdef MIPS
@@ -82,8 +82,8 @@ static char avr_device[] = "/dev/ttyS1";
 
 char config_file_location[] = "/etc/default/avr-evtd";
 
-TIMER *offTimer = NULL;
-TIMER *onTimer = NULL;
+event *offTimer = NULL;
+event *onTimer = NULL;
 int FileDescriptor = 0;
 time_t LastMelcoAccess = 0;
 int TimerFlag = 0;
@@ -140,10 +140,10 @@ static void avr_evtd_main(void);
 static char check_disk(void);
 static void set_avr_timer(char type);
 static void parse_avr(char *buff);
-static void GetTime(long timeNow, TIMER * pTimerLocate, long *time, long defaultTime);
-static int FindNextToday(long timeNow, TIMER * pTimer, long *time);
-static int FindNextDay(long timeNow, TIMER * pTimer, long *time, long *offset);
-static void destroyObject(TIMER * pTimer);
+static void GetTime(long timeNow, event * pTimerLocate, long *time, long defaultTime);
+static int FindNextToday(long timeNow, event * pTimer, long *time);
+static int FindNextDay(long timeNow, event * pTimer, long *time, long *offset);
+static void destroyObject(event * pTimer);
 static void writeUART(char);
 static void errorReport(int errorNumber);
 static void execute_command1(char cmd);
@@ -950,9 +950,9 @@ static void parse_avr(char *buff)
 	int ilastGroup = 0;
 	int iFirstDay = -1;
 	int iProcessDay = -1;
-	TIMER *pTimer;
-	TIMER *pOff;
-	TIMER *pOn;
+	event *pTimer;
+	event *pOff;
+	event *pOn;
 
 	/* Parse our time requests */
 	pos = strtok_r(buff, ",=\n", &last);
@@ -962,8 +962,8 @@ static void parse_avr(char *buff)
 	destroyObject(onTimer);
 
 	/* Now create our timer objects for on and off events */
-	pOn = onTimer = calloc(sizeof(TIMER), sizeof(char));
-	pOff = offTimer = calloc(sizeof(TIMER), sizeof(char));
+	pOn = onTimer = calloc(sizeof(event), sizeof(char));
+	pOff = offTimer = calloc(sizeof(event), sizeof(char));
 
 	/* Establish some defaults */
 	pesterMessage = 0;
@@ -1072,7 +1072,7 @@ static void parse_avr(char *buff)
 							 * space for the
 							 * next event
 							 * object */
-							pTimer->pointer = calloc(sizeof(TIMER),
+							pTimer->pointer = calloc(sizeof(event),
 										 sizeof(char));
 							pTimer = pTimer->pointer;
 						}
@@ -1080,7 +1080,7 @@ static void parse_avr(char *buff)
 						pTimer->day = iProcessDay;
 						pTimer->time = (iHour * 60) + iMinutes;
 						/* Allocate space for the next event object */
-						pTimer->pointer = calloc(sizeof(TIMER),
+						pTimer->pointer = calloc(sizeof(event),
 									 sizeof(char));
 						pTimer = pTimer->pointer;
 					}
@@ -1207,9 +1207,9 @@ static void parse_avr(char *buff)
 /**
  * Destroys time objects
  */
-static void destroyObject(TIMER * pTimer)
+static void destroyObject(event * pTimer)
 {
-	TIMER *pObj;
+	event *pObj;
 
 	/* Ensure valid pointer */
 	if (pTimer) {
@@ -1232,7 +1232,7 @@ static void destroyObject(TIMER * pTimer)
 /**
  * Scan macro objects for a valid event from 'time' today
  */
-static int FindNextToday(long timeNow, TIMER * pTimer, long *time)
+static int FindNextToday(long timeNow, event * pTimer, long *time)
 {
 	int iLocated = 0;
 
@@ -1254,7 +1254,7 @@ static int FindNextToday(long timeNow, TIMER * pTimer, long *time)
 /**
  * Locate the next valid event
  */
-static int FindNextDay(long timeNow, TIMER * pTimer, long *time, long *offset)
+static int FindNextDay(long timeNow, event * pTimer, long *time, long *offset)
 {
 	int iLocated = 0;
 
@@ -1282,11 +1282,11 @@ static int FindNextDay(long timeNow, TIMER * pTimer, long *time, long *offset)
 /**
  * Get next timed macro event
  */
-static void GetTime(long timeNow, TIMER * pTimerLocate, long *time, long defaultTime)
+static void GetTime(long timeNow, event * pTimerLocate, long *time, long defaultTime)
 {
 	long lOffset = 0;
 	char onLocated = 0;
-	TIMER *pTimer;
+	event *pTimer;
 
 	/* Ensure that macro timer object is valid */
 	if (pTimerLocate && pTimerLocate->pointer != NULL) {
