@@ -66,6 +66,7 @@
 
 /* Constants for readable code */
 #define COMMENT_PREFIX		'#'
+#define CONFIG_FILE_LOCATION	"/etc/default/avr-evtd"
 
 /* Macro event object definition */
 struct event {
@@ -82,8 +83,6 @@ static char avr_device[] = "/dev/ttyS0";
 #else
 static char avr_device[] = "/dev/ttyS1";
 #endif
-
-char config_file_location[] = "/etc/default/avr-evtd";
 
 event *offTimer = NULL;
 event *onTimer = NULL;
@@ -1553,9 +1552,7 @@ static int check_timer(char type)
 
 				/* Open and read the contents */
 #ifdef MIPS
-				file =
-				    open("/etc/melco/timer_status",
-					 O_RDONLY);
+				file = open("/etc/melco/timer_status", O_RDONLY);
 
 				if (file) {
 					iRead = read(file, buff, 254);
@@ -1567,9 +1564,7 @@ static int check_timer(char type)
 						parse_mips(buff);
 				}
 #else
-				file =
-				    open("/etc/melco/timer_sleep",
-					 O_RDONLY);
+				file = open("/etc/melco/timer_sleep", O_RDONLY);
 
 				if (file) {
 					iRead = read(file, buff, 31);
@@ -1605,15 +1600,13 @@ static int check_timer(char type)
 		 * again */
 		CommandLineUpdate = 2;
 
-		errno = stat(config_file_location, &filestatus);
+		errno = stat(CONFIG_FILE_LOCATION, &filestatus);
 
 		/* If exists? */
 		if (0 == errno) {
 			/* Has this file changed? */
 			if (filestatus.st_mtime != LastMelcoAccess) {
-				file =
-				    open(config_file_location,
-					 O_RDONLY);
+				file = open(CONFIG_FILE_LOCATION, O_RDONLY);
 
 				if (file) {
 					iRead = read(file, buff, 4095);
