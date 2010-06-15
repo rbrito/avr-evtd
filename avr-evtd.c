@@ -1209,22 +1209,12 @@ static void parse_avr(char *buff)
  */
 static void destroyObject(event * pTimer)
 {
-	event *pObj;
+	event *aux;
 
-	/* Ensure valid pointer */
-	if (pTimer) {
-		/* Bad this, can loop but let's destroy and free our
-		 * objects */
-		for (;;) {
-			pObj = pTimer->pointer;
-			if (NULL == pObj)
-				break;
-			free(pTimer);
-			pTimer = NULL;
-			pTimer = pObj;
-		}
-
-		pTimer = NULL;
+	while (pTimer) {
+		aux = pTimer->pointer;
+		free(pTimer);
+		pTimer = aux;
 	}
 }
 
