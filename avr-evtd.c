@@ -65,11 +65,13 @@
 #define ERRORED			'D'
 
 /* Macro event object definition */
-typedef struct _OFF_TIMER {
+struct event {
 	int day;		/* Event day */
 	long time;		/* Event time (24hr) */
-	void *pointer;		/* Pointer to next event */
-} TIMER;
+	struct event *pointer;	/* Pointer to next event */
+};
+
+typedef struct event TIMER;
 
 /* Some global variables */
 #ifdef MIPS
