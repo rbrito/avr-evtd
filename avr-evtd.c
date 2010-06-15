@@ -860,13 +860,7 @@ static char check_disk(void)
 				/* This is okay for ext2/3 but may not
 				 * be correct for other formats */
 				if (0 == errno) {
-					total = 100 - (int) ((((double)
-							       mountfs.
-							       f_bavail /
-							       (double)
-							       mountfs.f_blocks)
-							      * 100.0f) +
-							     0.99);
+					total = 100 - (int) (100.0 * mountfs.f_bavail)/mountfs.f_blocks;
 
 					if (total >= checkPercentage)
 						bFull = 1;
@@ -877,13 +871,7 @@ static char check_disk(void)
 				/* Check root */
 				errno = statfs(strWorking, &mountfs);
 				if (0 == errno) {
-					total2 = 100 - (int) ((((double)
-								mountfs.f_bavail
-								/ (double)
-								mountfs.f_blocks)
-							       * 100.0f) +
-							      0.99);
-
+					total2 = 100 - (int) (100.0 * mountfs.f_bavail)/mountfs.f_blocks;
 					if (total2 >= checkPercentage)
 						bFull = 1;
 				}
