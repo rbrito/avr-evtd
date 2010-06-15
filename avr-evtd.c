@@ -737,6 +737,7 @@ int main(int argc, char *argv[])
 	if (open_serial(avr_device)) {
 		exit(-3);
 	}
+
 #ifndef MIPS
 	if (debug > 1) {
 		close(FileDescriptor);
@@ -808,12 +809,9 @@ static char check_disk(void)
 				for (i = 0; i < 60; i++) {
 					cmd = -1;
 
-					if (strcasecmp(pos, rootPartition)
-					    == 0)
+					if (strcasecmp(pos, rootPartition) == 0)
 						cmd = 0;
-					else if (strcasecmp
-						 (pos,
-						  workingPartition) == 0)
+					else if (strcasecmp(pos, workingPartition) == 0)
 						cmd = 1;
 
 					pos = strtok(NULL, " \n");
@@ -826,13 +824,11 @@ static char check_disk(void)
 					 * (running a disk check) */
 					switch (cmd) {
 					case 0:
-						sprintf(strRoot, "%s",
-							pos);
+						sprintf(strRoot, "%s", pos);
 						FirstTime++;
 						break;
 					case 1:
-						sprintf(strWorking, "%s",
-							pos);
+						sprintf(strWorking, "%s", pos);
 						FirstTime++;
 						break;
 					}
