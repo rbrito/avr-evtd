@@ -979,7 +979,7 @@ static void parse_avr(char *buff)
 			/* Could return groups, say MON-THR, need to
 			 * strip '-' out */
 			if ('-' == pos[3]) {
-				*(last - 1) = (char) '=';	/* Plug the '0' with token parameter  */
+				*(last - 1) = '=';	/* Plug the '0' with token parameter  */
 				iGroup = 1;
 				last -= 8;
 				pos = strtok_r(NULL, "-", &last);
@@ -999,7 +999,7 @@ static void parse_avr(char *buff)
 			 * tokeniser pointer if none remark field */
 			if (pos[0] != COMMENT_PREFIX) {
 				j = strlen(pos);
-				*(last - 1) = (char) ',';	/* Plug the '0' with token parameter  */
+				*(last - 1) = ',';	/* Plug the '0' with token parameter  */
 				last = last - (j + 1);
 
 				/* Now lets tokenise this valid line */
@@ -1045,7 +1045,7 @@ static void parse_avr(char *buff)
 		case 4:
 			pTimer = pOn;
 			iHour = iMinutes = 0;
-		      process:
+		process:
 			if (!sscanf(pos, "%02d:%02d", &iHour, &iMinutes))
 				TimerFlag = -1;
 
