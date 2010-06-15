@@ -160,7 +160,9 @@ static void usage(void)
 	exit(0);
 }
 
-/* Handle ALL UART messages from a central point, reduce code overhead */
+/**
+ * Handle ALL UART messages from a central point
+ */
 static void writeUART(char output_)
 {
 	char output[4];
@@ -168,7 +170,9 @@ static void writeUART(char output_)
 	write(FileDescriptor, output, 4);
 }
 
-/* Establish connection to serial port and initialise it */
+/**
+ * Establish connection to serial port and initialise it
+ */
 static int open_serial(char *device)
 {
 	struct termios newtio;
@@ -227,6 +231,7 @@ static int open_serial(char *device)
 	return 0;
 }
 
+
 static int close_serial(void)
 {
 	if (FileDescriptor != 0) {
@@ -249,6 +254,7 @@ static int close_serial(void)
 	closelog();
 	return 0;
 }
+
 
 static void termination_handler(int signum)
 {
@@ -282,7 +288,9 @@ static void execute_command1(char cmd)
 }
 
 
-/* Our main entry, decode requests and monitor activity */
+/**
+ * Our main entry, decode requests and monitor activity
+ */
 static void avr_evtd_main(void)
 {
 	char buf[17];
@@ -761,13 +769,16 @@ static void errorReport(int errorNumber)
 }
 
 
+/**
+ * Check that the filesystem is intact and we have at least DISKCHECK%
+ * spare capacity
+ *
+ * NOTE: DISK FULL LED may flash during a disk check as /dev/hda3 mount
+ * check will not be available, this is not an error and light will
+ * extinguish once volume has been located
+ */
 static char check_disk(void)
 {
-	/* Check that the filesystem is intact and we have at least
-	 * DISKCHECK% spare capacity NOTE: DISK FULL LED may flash
-	 * during a disk check as /dev/hda3 mount check will not be
-	 * available, this is not an error and light will extinguish
-	 * once volume has been located */
 	static char FirstTime = 0;
 	static char strRoot[16];
 	static char strWorking[16];
@@ -879,23 +890,22 @@ static char check_disk(void)
 #ifndef NO_MELCO
 
 #ifndef MIPS
+/**
+ * Parse time requests
+ */
 static void parse_timer(char *buff)
 {
-	/* Parse our time requests */
 	int offHour, offMinutes, onHour, onMinutes;
 	long offTime = -1, onTime = -1;
 
 	/* Parse the data for breakdown later */
-	if (sscanf
-	    (buff, "on<>%02d:%02d<>%02d:%02d", &offHour, &offMinutes,
-	     &onHour, &onMinutes)) {
+	if (sscanf(buff, "on<>%02d:%02d<>%02d:%02d", &offHour, &offMinutes, &onHour, &onMinutes)) {
 		TimerFlag = 1;
 		offTime = (offHour * 60) + offMinutes;
 		onTime = (onHour * 60) + onMinutes;
 	} else
 	    if (sscanf
-		(buff, "off<>%02d:%02d<>%02d:%02d", &offHour, &offMinutes,
-		 &onHour, &onMinutes)) {
+		(buff, "off<>%02d:%02d<>%02d:%02d", &offHour, &offMinutes, &onHour, &onMinutes)) {
 		TimerFlag = 0;
 	} else {
 		TimerFlag = 0;
@@ -907,11 +917,12 @@ static void parse_timer(char *buff)
 	}
 }
 #endif
-
 #endif
 
 
-/* Parse configuration file /etc/default/avr-evtd */
+/**
+ * Parse configuration file /etc/default/avr-evtd
+ */
 static void parse_avr(char *buff)
 {
 	const char *command[] = {
@@ -1206,10 +1217,11 @@ static void parse_avr(char *buff)
 }
 
 
+/**
+ * Destroys time objects
+ */
 static void destroyObject(TIMER * pTimer)
 {
-	/* Destroy this object by free-ing up the memory we grabbed
-	 * through calloc */
 	TIMER *pObj;
 
 	/* Ensure valid pointer */
@@ -1230,9 +1242,11 @@ static void destroyObject(TIMER * pTimer)
 }
 
 
+/**
+ * Scan macro objects for a valid event from 'time' today
+ */
 static int FindNextToday(long timeNow, TIMER * pTimer, long *time)
 {
-	/* Scan macro objects for a valid event from 'time' today */
 	int iLocated = 0;
 
 	while (pTimer != NULL && pTimer->pointer != NULL) {
@@ -1250,9 +1264,11 @@ static int FindNextToday(long timeNow, TIMER * pTimer, long *time)
 }
 
 
+/**
+ * Locate the next valid event
+ */
 static int FindNextDay(long timeNow, TIMER * pTimer, long *time, long *offset)
 {
-	/* Locate the next valid event */
 	int iLocated = 0;
 
 	while (pTimer != NULL && pTimer->pointer != NULL) {
@@ -1276,9 +1292,11 @@ static int FindNextDay(long timeNow, TIMER * pTimer, long *time, long *offset)
 }
 
 
+/**
+ * Get next timed macro event
+ */
 static void GetTime(long timeNow, TIMER * pTimerLocate, long *time, long defaultTime)
 {
-	/* Get next timed macro event */
 	long lOffset = 0;
 	char onLocated = 0;
 	TIMER *pTimer;
@@ -1400,10 +1418,12 @@ static void parse_mips(char *buff)
 
 #endif
 
+/**
+ * Determine shutdown/power up time and fire relevant string update to
+ * the AVR
+ */
 static void set_avr_timer(char type)
 {
-	/* Determine shutdown/power up time and fire relevant string
-	 * update to the AVR */
 	const char *strMessage[] =
 	    { "file update", "re-validation", "clock skew" };
 	long current_time, wait_time;
@@ -1527,11 +1547,12 @@ static void set_avr_timer(char type)
 }
 
 
+/**
+ * Check to see if we need to perform an update.  We check the original
+ * melco timer file (timer_sleep) for timer requests if required
+ */
 static int check_timer(char type)
 {
-	/* Check to see if we need to perform an update.  We check the
-	   original melco timer file (timer_sleep) for timer requests if
-	   required */
 	int iReturn = 1;
 	int iRead;
 	int errno;
