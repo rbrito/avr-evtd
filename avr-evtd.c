@@ -142,7 +142,7 @@ static void set_avr_timer(char type);
 static void parse_avr(char *buff);
 static void GetTime(long timeNow, event * pTimerLocate, long *time, long defaultTime);
 static int FindNextToday(long timeNow, event * pTimer, long *time);
-static int FindNextDay(long timeNow, event * pTimer, long *time, long *offset);
+static int FindNextDay(event * pTimer, long *time, long *offset);
 static void destroyObject(event * pTimer);
 static void writeUART(char);
 static void errorReport(int errorNumber);
@@ -1244,7 +1244,7 @@ static int FindNextToday(long timeNow, event * pTimer, long *time)
 /**
  * Locate the next valid event
  */
-static int FindNextDay(long timeNow, event * pTimer, long *time, long *offset)
+static int FindNextDay(event * pTimer, long *time, long *offset)
 {
 	int iLocated = 0;
 
@@ -1289,8 +1289,7 @@ static void GetTime(long timeNow, event * pTimerLocate, long *time, long default
 		 * power-up time */
 		if (0 == onLocated) {
 			pTimer = pTimerLocate;
-			onLocated =
-			    FindNextDay(timeNow, pTimer, time, &lOffset);
+			onLocated = FindNextDay(pTimer, time, &lOffset);
 		}
 
 		/* Nothing for week-end, look at start */
@@ -1324,8 +1323,7 @@ static void parse_mips(char *buff)
 	   sleep_start=0:00
 	   sleep_finish=9:00
 	 */
-	const char *command[] =
-	    { "type", "backup_time", "sleep_start", "sleep_finish" };
+	const char *command[] = { "type", "backup_time", "sleep_start", "sleep_finish" };
 	char *pos;
 	int i;
 	int cmd = 0;
@@ -1401,8 +1399,7 @@ static void parse_mips(char *buff)
  */
 static void set_avr_timer(char type)
 {
-	const char *strMessage[] =
-	    { "file update", "re-validation", "clock skew" };
+	const char *strMessage[] = { "file update", "re-validation", "clock skew" };
 	long current_time, wait_time;
 	time_t ltime, ttime;
 	struct tm *decode_time;
@@ -1419,8 +1416,7 @@ static void set_avr_timer(char type)
 		time(&ltime);
 
 		decode_time = localtime(&ltime);
-		current_time =
-		    (decode_time->tm_hour * 60) + decode_time->tm_min;
+		current_time = (decode_time->tm_hour * 60) + decode_time->tm_min;
 		last_day = decode_time->tm_wday;
 
 		GetTime(current_time, offTimer, &offTime, OffTime);
