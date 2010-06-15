@@ -121,11 +121,11 @@ int diskUsed = 0;
 static void usage(void);
 static int check_timer(char type);
 static void termination_handler(int signum);
-static int open_serial(char *device) __attribute__ ((always_inline));
+static int open_serial(char *device);
 
 #ifdef MIPS
 #	ifndef NO_MELCO
-static void parse_mips(char *buff) __attribute__ ((always_inline));
+static void parse_mips(char *buff);
 #	endif
 #else
 #	ifndef NO_MELCO
@@ -135,7 +135,7 @@ static void parse_timer(char *buff);
 
 static int close_serial(void);
 static void avr_evtd_main(void);
-static char check_disk(void) __attribute__ ((always_inline));
+static char check_disk(void);
 static void set_avr_timer(char type);
 static void parse_avr(char *buff);
 static void GetTime(long timeNow, TIMER * pTimerLocate, long *time, long defaultTime);
