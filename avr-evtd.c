@@ -654,7 +654,7 @@ static void avr_evtd_main(void)
 			if ((tt_Power_Press + SP_MONITOR_TIME) < tt_TimeNow
 			    && FirstTimeFlag > 1) {
 				/* Inform the EventScript */
-				execute_command(FIVE_SHUTDOWN, (int) ((float) ShutdownTimer / 60.0f));
+				execute_command(FIVE_SHUTDOWN, (int) (ShutdownTimer/60.0);
 				FirstTimeFlag = 1;
 				tt_Power_Press = 0;
 			}
