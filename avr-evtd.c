@@ -68,7 +68,7 @@
 struct event {
 	int day;		/* Event day */
 	long time;		/* Event time (24hr) */
-	struct event *pointer;	/* Pointer to next event */
+	struct event *next;	/* Pointer to next event */
 };
 
 typedef struct event event;
@@ -1072,17 +1072,17 @@ static void parse_avr(char *buff)
 							 * space for the
 							 * next event
 							 * object */
-							pTimer->pointer = calloc(sizeof(event),
+							pTimer->next = calloc(sizeof(event),
 										 sizeof(char));
-							pTimer = pTimer->pointer;
+							pTimer = pTimer->next;
 						}
 					} else {
 						pTimer->day = iProcessDay;
 						pTimer->time = (iHour * 60) + iMinutes;
 						/* Allocate space for the next event object */
-						pTimer->pointer = calloc(sizeof(event),
+						pTimer->next = calloc(sizeof(event),
 									 sizeof(char));
-						pTimer = pTimer->pointer;
+						pTimer = pTimer->next;
 					}
 				}
 
@@ -1212,7 +1212,7 @@ static void destroyObject(event * pTimer)
 	event *aux;
 
 	while (pTimer) {
-		aux = pTimer->pointer;
+		aux = pTimer->next;
 		free(pTimer);
 		pTimer = aux;
 	}
@@ -1226,14 +1226,14 @@ static int FindNextToday(long timeNow, event * pTimer, long *time)
 {
 	int iLocated = 0;
 
-	while (pTimer != NULL && pTimer->pointer != NULL) {
+	while (pTimer != NULL && pTimer->next != NULL) {
 		/* Next event for today?, at least 1 minute past current */
 		if (pTimer->day == last_day && pTimer->time > timeNow) {
 			iLocated = 1;
 			*time = pTimer->time;
 			pTimer = NULL;
 		} else {
-			pTimer = pTimer->pointer;
+			pTimer = pTimer->next;
 		}
 	}
 
@@ -1248,7 +1248,7 @@ static int FindNextDay(long timeNow, event * pTimer, long *time, long *offset)
 {
 	int iLocated = 0;
 
-	while (pTimer != NULL && pTimer->pointer != NULL) {
+	while (pTimer != NULL && pTimer->next != NULL) {
 		/* Next event for tomorrow onwards? */
 		if (pTimer->day > last_day) {
 			/* Grouped events?, ie only tomorrow */
@@ -1261,7 +1261,7 @@ static int FindNextDay(long timeNow, event * pTimer, long *time, long *offset)
 			*time = pTimer->time;
 			pTimer = NULL;
 		} else {
-			pTimer = pTimer->pointer;
+			pTimer = pTimer->next;
 		}
 	}
 
@@ -1279,7 +1279,7 @@ static void GetTime(long timeNow, event * pTimerLocate, long *time, long default
 	event *pTimer;
 
 	/* Ensure that macro timer object is valid */
-	if (pTimerLocate && pTimerLocate->pointer != NULL) {
+	if (pTimerLocate && pTimerLocate->next != NULL) {
 		lOffset = 0;
 		pTimer = pTimerLocate;
 		/* Next event for today */
