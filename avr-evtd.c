@@ -133,7 +133,7 @@ static void parse_timer(char *buff);
 #	endif
 #endif
 
-static int close_serial(void);
+static void close_serial(void);
 static void avr_evtd_main(void);
 static char check_disk(void);
 static void set_avr_timer(char type);
@@ -232,7 +232,7 @@ static int open_serial(char *device)
 }
 
 
-static int close_serial(void)
+static void close_serial(void)
 {
 	if (FileDescriptor != 0) {
 		/* The AVR does not really need to see this, just stops
@@ -252,7 +252,6 @@ static int close_serial(void)
 
 	/* Tidy up please */
 	closelog();
-	return 0;
 }
 
 
