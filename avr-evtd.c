@@ -113,9 +113,8 @@ int checkState = 1;		/* Will force an update within 15
 				 * seconds of starting up to resolve
 				 * those pushed out refresh times */
 char em_mode = 0;
-char rootPartition[10] = "";	/* Default, no defaults for both root
-				 * and working partitions */
-char workingPartition[10] = "";
+char rootdev[10] = "";		/* root filesystem device */
+char workdev[10] = "";		/* work filesystem device */
 int diskCheckNumber = 0;
 char keepAlive = 0x5B;
 char resetPresses = 0;
@@ -782,8 +781,8 @@ static void errorReport(int errorNumber)
 static char check_disk(void)
 {
 	static char FirstTime = 0;
-	static char strRoot[16];
-	static char strWorking[16];
+	static char root_mountpt[16];
+	static char work_mountpt[16];
 	struct statfs mountfs;
 	char bFull = 0;
 	int errno;
@@ -811,9 +810,9 @@ static char check_disk(void)
 				for (i = 0; i < 60; i++) {
 					cmd = -1;
 
-					if (strcasecmp(pos, rootPartition) == 0)
+					if (strcasecmp(pos, rootdev) == 0)
 						cmd = 0;
-					else if (strcasecmp(pos, workingPartition) == 0)
+					else if (strcasecmp(pos, workdev) == 0)
 						cmd = 1;
 
 					pos = strtok(NULL, " \n");
@@ -826,11 +825,11 @@ static char check_disk(void)
 					 * (running a disk check) */
 					switch (cmd) {
 					case 0:
-						sprintf(strRoot, "%s", pos);
+						sprintf(root_mountpt, "%s", pos);
 						FirstTime++;
 						break;
 					case 1:
-						sprintf(strWorking, "%s", pos);
+						sprintf(work_mountpt, "%s", pos);
 						FirstTime++;
 						break;
 					}
@@ -846,9 +845,9 @@ static char check_disk(void)
 		errno = -1;
 		/* Ensure root and/or working paths have been located */
 		if (diskCheckNumber == FirstTime) {
-			/* Check mount directory */
-			if (strlen(strRoot) > 0) {
-				errno = statfs(strRoot, &mountfs);
+			/* check root partition */
+			if (strlen(root_mountpt) > 0) {
+				errno = statfs(root_mountpt, &mountfs);
 				/* This is okay for ext2/3 but may not
 				 * be correct for other formats */
 				if (0 == errno) {
@@ -859,9 +858,9 @@ static char check_disk(void)
 				}
 			}
 
-			if (strlen(strWorking) > 0) {
-				/* Check root */
-				errno = statfs(strWorking, &mountfs);
+			if (strlen(work_mountpt) > 0) {
+				/* check work partition */
+				errno = statfs(work_mountpt, &mountfs);
 				if (0 == errno) {
 					total2 = 100 - (int) (100.0 * mountfs.f_bavail)/mountfs.f_blocks;
 					if (total2 >= checkPercentage)
@@ -1173,22 +1172,15 @@ static void parse_avr(char *buff)
 			}
 			break;
 
-			break;
-
-			/* Specified partiton names */
+		/* Specified partiton names */
 		case 17:
 		case 18:
 			if (strlen(pos) <= 5) {
 				diskCheckNumber++;
-
-				/* Specified ROOT partiton */
 				if (17 == cmd)
-					sprintf(rootPartition, "/dev/%s",
-						pos);
+					sprintf(rootdev, "/dev/%s", pos);
 				else
-					/* Specified WORKING partiton */
-					sprintf(workingPartition,
-						"/dev/%s", pos);
+					sprintf(workdev, "/dev/%s", pos);
 			}
 			break;
 		}
