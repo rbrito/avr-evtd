@@ -1067,34 +1067,22 @@ static void parse_avr(char *buff)
 							if (j > 7)
 								j = 0;
 							pTimer->day = j;
-							pTimer->time =
-							    (iHour * 60) +
-							    iMinutes;
+							pTimer->time = (iHour * 60) + iMinutes;
 							/* Allocate
 							 * space for the
 							 * next event
 							 * object */
-							pTimer->pointer =
-							    (void *)
-							    calloc(sizeof
-								   (TIMER),
-								   sizeof
-								   (char));
-							pTimer = (TIMER *)
-							    pTimer->
-							    pointer;
+							pTimer->pointer = calloc(sizeof(TIMER),
+										 sizeof(char));
+							pTimer = pTimer->pointer;
 						}
 					} else {
 						pTimer->day = iProcessDay;
-						pTimer->time =
-						    (iHour * 60) +
-						    iMinutes;
+						pTimer->time = (iHour * 60) + iMinutes;
 						/* Allocate space for the next event object */
-						pTimer->pointer = (void *)
-						    calloc(sizeof(TIMER),
-							   sizeof(char));
-						pTimer = (TIMER *)
-						    pTimer->pointer;
+						pTimer->pointer = calloc(sizeof(TIMER),
+									 sizeof(char));
+						pTimer = pTimer->pointer;
 					}
 				}
 
