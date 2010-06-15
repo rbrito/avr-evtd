@@ -322,8 +322,7 @@ static void avr_evtd_main(void)
 			/* Change our timer to check for a power/reset
 			 * request need a faster poll rate here to see
 			 * the double press event properly */
-			if (PushedPowerFlag || PushedResetFlag
-			    || FirstTimeFlag > 1) {
+			if (PushedPowerFlag || PushedResetFlag || FirstTimeFlag > 1) {
 				tt_TimeoutPoll.tv_usec = 250;
 				iResult = 0;
 				checkState = -2;
@@ -353,9 +352,8 @@ static void avr_evtd_main(void)
 		FD_SET(FileDescriptor, &fReadFS);
 
 		/* Wait for AVR message or time-out? */
-		iResult =
-		    select(FileDescriptor + 1, &fReadFS, NULL, NULL,
-			   &tt_TimeoutPoll);
+		iResult = select(FileDescriptor + 1, &fReadFS, NULL, NULL,
+				 &tt_TimeoutPoll);
 
 		tt_TimeNow = time(NULL);
 
@@ -372,24 +370,18 @@ static void avr_evtd_main(void)
 				if (0 == PressedPowerFlag) {
 					cmd = POWER_RELEASE;
 
-					if ((tt_TimeNow -
-					     tt_Power_Press) <= HOLD_TIME
-					    && FirstTimeFlag < 2) {
+					if ((tt_TimeNow - tt_Power_Press) <= HOLD_TIME && FirstTimeFlag < 2) {
 						cmd = USER_RESET;
-					} else if (ShutdownTimer <
-						   FIVE_MINUTES
-						   || FirstTimeFlag > 1) {
+					} else if (ShutdownTimer < FIVE_MINUTES || FirstTimeFlag > 1) {
 						if (0 == FirstTimeFlag)
 							FirstTimeFlag = 10;
 
-						ShutdownTimer +=
-						    FIVE_MINUTES;
+						ShutdownTimer += FIVE_MINUTES;
 						FirstTimeFlag--;
 						extraTime = 1;
 					}
 
 					execute_command1(cmd);
-
 					tt_Power_Press = tt_TimeNow;
 				}
 
@@ -411,16 +403,13 @@ static void avr_evtd_main(void)
 					iResult = 0;
 
 					/* Launch our telnet daemon */
-					if ((tt_TimeNow -
-					     tt_Power_Press) <=
-					    HOLD_TIME) {
+					if ((tt_TimeNow - tt_Power_Press) <= HOLD_TIME) {
 						cmd = SPECIAL_RESET;
 						iResult = resetPresses;
 						resetPresses++;
 					}
 
 					execute_command(cmd, iResult);
-
 					tt_Power_Press = tt_TimeNow;
 				}
 
@@ -597,9 +586,7 @@ static void avr_evtd_main(void)
 						/* Execute some user code on disk full */
 						if (FirstWarning) {
 							FirstWarning = pesterMessage;
-							execute_command
-							    (DISK_FULL,
-							     diskUsed);
+							execute_command(DISK_FULL, diskUsed);
 						}
 					}
 
@@ -611,8 +598,7 @@ static void avr_evtd_main(void)
 							cmd++;
 						else {
 							FirstWarning = 0;
-							execute_command
-							    (DISK_FULL, 0);
+							execute_command(DISK_FULL, 0);
 						}
 
 						diskFull = currentStatus;
@@ -668,10 +654,7 @@ static void avr_evtd_main(void)
 			if ((tt_Power_Press + SP_MONITOR_TIME) < tt_TimeNow
 			    && FirstTimeFlag > 1) {
 				/* Inform the EventScript */
-				execute_command(FIVE_SHUTDOWN,
-						(int) ((float)
-						       ShutdownTimer /
-						       60.0f));
+				execute_command(FIVE_SHUTDOWN, (int) ((float) ShutdownTimer / 60.0f));
 				FirstTimeFlag = 1;
 				tt_Power_Press = 0;
 			}
