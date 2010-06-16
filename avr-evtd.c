@@ -132,14 +132,8 @@ static int check_timer(char type);
 static void termination_handler(int signum);
 static int open_serial(char *device);
 
-#ifdef MIPS
-#	ifndef NO_MELCO
+#ifndef NO_MELCO
 static void parse_timer(char *buff);
-#	endif
-#else
-#	ifndef NO_MELCO
-static void parse_timer(char *buff);
-#	endif
 #endif
 
 static void close_serial(void);
@@ -889,9 +883,7 @@ static char check_disk(void)
 	return bFull;
 }
 
-#ifndef NO_MELCO
-
-#ifndef MIPS
+#if !defined(NO_MELCO) && !defined(MIPS)
 /**
  * Parse time requests
  */
@@ -918,7 +910,6 @@ static void parse_timer(char *buff)
 		OnTime = onTime;
 	}
 }
-#endif
 #endif
 
 
@@ -1303,9 +1294,7 @@ static void GetTime(long timeNow, event * pTimerLocate, long *time, long default
 		*time = defaultTime;
 }
 
-#ifndef NO_MELCO
-
-#ifdef MIPS
+#if !defined(NO_MELCO) && defined(MIPS)
 static void parse_timer(char *buff)
 {
 	/*
@@ -1383,9 +1372,6 @@ static void parse_timer(char *buff)
 		errorReport(4);
 	}
 }
-
-#endif
-
 #endif
 
 /**
