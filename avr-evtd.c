@@ -78,11 +78,17 @@ struct event {
 
 typedef struct event event;
 
-/* Some global variables */
+/* Variables and macros that depend on the architecture */
 #ifdef MIPS
+
 static char avr_device[] = "/dev/ttyS0";
+#define MELCO_CONFIG_FILE	"/etc/melco/timer_status"
+
 #else
+
 static char avr_device[] = "/dev/ttyS1";
+#define MELCO_CONFIG_FILE	"/etc/melco/timer_sleep"
+
 #endif
 
 event *offTimer = NULL;
@@ -128,7 +134,7 @@ static int open_serial(char *device);
 
 #ifdef MIPS
 #	ifndef NO_MELCO
-static void parse_mips(char *buff);
+static void parse_timer(char *buff);
 #	endif
 #else
 #	ifndef NO_MELCO
@@ -1300,7 +1306,7 @@ static void GetTime(long timeNow, event * pTimerLocate, long *time, long default
 #ifndef NO_MELCO
 
 #ifdef MIPS
-static void parse_mips(char *buff)
+static void parse_timer(char *buff)
 {
 	/*
 	   type=off
@@ -1530,11 +1536,7 @@ static int check_timer(char type)
 		CommandLineUpdate = 1;
 
 		/* Get file status of sleep timer file */
-#ifdef MIPS
-		errno = stat("/etc/melco/timer_status", &filestatus);
-#else
-		errno = stat("/etc/melco/timer_sleep", &filestatus);
-#endif
+		errno = stat(MELCO_CONFIG_FILE, &filestatus);
 
 		/* If exists? */
 		if (0 == errno) {
@@ -1543,23 +1545,9 @@ static int check_timer(char type)
 				iRead = -1;
 
 				/* Open and read the contents */
-#ifdef MIPS
-				file = open("/etc/melco/timer_status", O_RDONLY);
-
+				file = open(MELCO_CONFIG_FILE, O_RDONLY);
 				if (file) {
-					iRead = read(file, buff, 254);
-
-					/* Dump the file pointer for others */
-					close(file);
-
-					if (iRead > 0)
-						parse_mips(buff);
-				}
-#else
-				file = open("/etc/melco/timer_sleep", O_RDONLY);
-
-				if (file) {
-					iRead = read(file, buff, 31);
+					iRead = read(file, buff, sizeof(buff));
 
 					/* Dump the file pointer for others */
 					close(file);
@@ -1567,7 +1555,7 @@ static int check_timer(char type)
 					if (iRead > 0)
 						parse_timer(buff);
 				}
-#endif
+
 				if (iRead > 0) {
 					/* Return flag */
 					iReturn = CommandLineUpdate = 0;
