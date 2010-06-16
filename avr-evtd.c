@@ -68,6 +68,7 @@
 #define COMMENT_PREFIX		'#'
 #define CONFIG_FILE_LOCATION	"/etc/default/avr-evtd"
 #define VERSION			"Linkstation/Kuro AVR daemon $Rev$\n"
+#define CMD_LINE_LENGTH		64
 
 /* Macro event object definition */
 struct event {
@@ -275,11 +276,11 @@ static void termination_handler(int signum)
 /* Execute event script handler with the appropriate commands */
 static void execute_command(char cmd, int cmd2)
 {
-	char strEventScript[45];
+	char cmd_line[CMD_LINE_LENGTH];
 
-	sprintf(strEventScript, "/etc/avr-evtd/EventScript %c %s %d &",
+	sprintf(cmd_line, "/etc/avr-evtd/EventScript %c %s %d &",
 		cmd, avr_device, cmd2);
-	system(strEventScript);
+	system(cmd_line);
 }
 
 
