@@ -884,7 +884,8 @@ static char check_disk(void)
 	return bFull;
 }
 
-#if defined(MELCO) && !defined(MIPS)
+#ifdef MELCO
+#ifndef MIPS
 /**
  * Parse time requests
  */
@@ -911,8 +912,86 @@ static void parse_timer(char *buff)
 		OnTime = onTime;
 	}
 }
-#endif
+#else
+static void parse_timer(char *buff)
+{
+	/*
+	   type=off
+	   backup_status=off
+	   backup_time=0:00
+	   backup_type=day
+	   backup_week=Sun
+	   backup_overwrite=off
+	   sleep_start=0:00
+	   sleep_finish=9:00
+	 */
+	const char *command[] = { "type", "backup_time", "sleep_start", "sleep_finish" };
+	char *pos;
+	int i;
+	int cmd = 0;
+	int backupHour, backupMinutes, offHour, offMinutes, onHour,
+	    onMinutes;
+	long offTime, onTime;
 
+	TimerFlag = 0;
+
+	/* Parse our time requests */
+	pos = strtok(buff, "=\n");
+
+	/* Parse the data for breakdown later */
+	for (i = 0; i < 16; i++) {
+		cmd = -1;
+		/* Locate our expected commands */
+		for (cmd = 0; cmd < 4; cmd++)
+			if (strcasecmp(pos, command[cmd]) == 0)
+				break;
+
+		pos = strtok(NULL, "=\n");
+		if (!pos)
+			break;
+
+		/* Now parse the setting
+		   type is sleep otherwise deemed off
+		   backup_time expects HH:MM NOT CURRENTLY SUPPORTED
+		   sleep_start expects HH:MM if not, then timer is disabled
+		   sleep_finish expects HH:MM if not, then timer is disabled
+		 */
+		switch (cmd) {
+		case 0:
+			if (strcasecmp(pos, "sleep") == 0)
+				TimerFlag = 1;
+			break;
+		case 1:
+			sscanf(pos, "%02d:%02d", &backupHour,
+			       &backupMinutes);
+			break;
+		case 2:
+			if (!sscanf
+			    (pos, "%02d:%02d", &offHour, &offMinutes))
+				TimerFlag = -1;
+			break;
+		case 3:
+			if (!sscanf(pos, "%02d:%02d", &onHour, &onMinutes))
+				TimerFlag = -1;
+			break;
+		}
+	}
+
+	/* Failed timer needs timer=sleep and both off time and on time
+	 * to be specified */
+	if (1 == TimerFlag) {
+		offTime = (offHour * 60) + offMinutes;
+		onTime = (onHour * 60) + onMinutes;
+
+		OffTime = offTime;
+		OnTime = onTime;
+	} else if (TimerFlag != 0) {
+		TimerFlag = 0;
+		errorReport(4);
+	}
+}
+#endif
+#endif
 
 /**
  * Parse configuration file /etc/default/avr-evtd
@@ -1294,86 +1373,6 @@ static void GetTime(long timeNow, event * pTimerLocate, long *time, long default
 	} else
 		*time = defaultTime;
 }
-
-#if defined(MELCO) && defined(MIPS)
-static void parse_timer(char *buff)
-{
-	/*
-	   type=off
-	   backup_status=off
-	   backup_time=0:00
-	   backup_type=day
-	   backup_week=Sun
-	   backup_overwrite=off
-	   sleep_start=0:00
-	   sleep_finish=9:00
-	 */
-	const char *command[] = { "type", "backup_time", "sleep_start", "sleep_finish" };
-	char *pos;
-	int i;
-	int cmd = 0;
-	int backupHour, backupMinutes, offHour, offMinutes, onHour,
-	    onMinutes;
-	long offTime, onTime;
-
-	TimerFlag = 0;
-
-	/* Parse our time requests */
-	pos = strtok(buff, "=\n");
-
-	/* Parse the data for breakdown later */
-	for (i = 0; i < 16; i++) {
-		cmd = -1;
-		/* Locate our expected commands */
-		for (cmd = 0; cmd < 4; cmd++)
-			if (strcasecmp(pos, command[cmd]) == 0)
-				break;
-
-		pos = strtok(NULL, "=\n");
-		if (!pos)
-			break;
-
-		/* Now parse the setting
-		   type is sleep otherwise deemed off
-		   backup_time expects HH:MM NOT CURRENTLY SUPPORTED
-		   sleep_start expects HH:MM if not, then timer is disabled
-		   sleep_finish expects HH:MM if not, then timer is disabled
-		 */
-		switch (cmd) {
-		case 0:
-			if (strcasecmp(pos, "sleep") == 0)
-				TimerFlag = 1;
-			break;
-		case 1:
-			sscanf(pos, "%02d:%02d", &backupHour,
-			       &backupMinutes);
-			break;
-		case 2:
-			if (!sscanf
-			    (pos, "%02d:%02d", &offHour, &offMinutes))
-				TimerFlag = -1;
-			break;
-		case 3:
-			if (!sscanf(pos, "%02d:%02d", &onHour, &onMinutes))
-				TimerFlag = -1;
-			break;
-		}
-	}
-
-	/* Failed timer needs timer=sleep and both off time and on time
-	 * to be specified */
-	if (1 == TimerFlag) {
-		offTime = (offHour * 60) + offMinutes;
-		onTime = (onHour * 60) + onMinutes;
-
-		OffTime = offTime;
-		OnTime = onTime;
-	} else if (TimerFlag != 0) {
-		TimerFlag = 0;
-		errorReport(4);
-	}
-}
-#endif
 
 /**
  * Determine shutdown/power up time and fire relevant string update to
