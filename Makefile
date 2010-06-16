@@ -29,8 +29,8 @@ ifeq (${MACHINE}, mips)
 	CFLAGS += -DMIPS
 endif
 
-ifneq (, $(shell test -d /etc/melco))
-	CFLAGS += -DNO_MELCO
+ifeq (0, $(shell test -d /etc/melco))
+	CFLAGS += -DMELCO
 endif
 
 

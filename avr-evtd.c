@@ -102,7 +102,7 @@ char FirstWarning = 1;
 long OffTime = -1;		/* Default, NO defaults */
 long OnTime = -1;		/* Default, NO defaults */
 
-#ifndef NO_MELCO
+#ifdef MELCO
 char CommandLineUpdate = 0;
 #else
 char CommandLineUpdate = 1;
@@ -132,7 +132,7 @@ static int check_timer(char type);
 static void termination_handler(int signum);
 static int open_serial(char *device);
 
-#ifndef NO_MELCO
+#ifdef MELCO
 static void parse_timer(char *buff);
 #endif
 
@@ -883,7 +883,7 @@ static char check_disk(void)
 	return bFull;
 }
 
-#if !defined(NO_MELCO) && !defined(MIPS)
+#if defined(MELCO) && !defined(MIPS)
 /**
  * Parse time requests
  */
@@ -1294,7 +1294,7 @@ static void GetTime(long timeNow, event * pTimerLocate, long *time, long default
 		*time = defaultTime;
 }
 
-#if !defined(NO_MELCO) && defined(MIPS)
+#if defined(MELCO) && defined(MIPS)
 static void parse_timer(char *buff)
 {
 	/*
@@ -1514,7 +1514,7 @@ static int check_timer(char type)
 	int file;
 	struct stat filestatus;
 
-#ifndef NO_MELCO
+#ifdef MELCO
 	/* Expect its a file time read required?
 	   This is purely for legacy timer files only.
 	   If this does not exist, then we look for our default */
