@@ -1212,22 +1212,20 @@ static void destroyObject(event * pTimer)
 /**
  * Scan macro objects for a valid event from @a time today
  */
-static int FindNextToday(long timeNow, event *pTimer, long *time)
+static int FindNextToday(long timeNow, event *cur, long *time)
 {
-	int iLocated = 0;
+	int found = 0;
 
-	while (pTimer != NULL && pTimer->next != NULL) {
+	while (cur != NULL && !found) {
 		/* Next event for today?, at least 1 minute past current */
-		if (pTimer->day == last_day && pTimer->time > timeNow) {
-			iLocated = 1;
-			*time = pTimer->time;
-			pTimer = NULL;
-		} else {
-			pTimer = pTimer->next;
+		if (cur->day == last_day && cur->time > timeNow) {
+			found = 1;
+			*time = cur->time;
 		}
+		cur = cur->next;
 	}
 
-	return iLocated;
+	return found;
 }
 
 
