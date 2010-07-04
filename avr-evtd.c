@@ -1308,7 +1308,7 @@ static void set_avr_timer(int type)
 	time_t ltime, ttime;
 	struct tm *decode_time;
 	char message[80];
-	char strAVR;
+	char avr_cmd;
 	char twelve;
 	int i;
 	long mask = 0x800;
@@ -1396,11 +1396,11 @@ static void set_avr_timer(int type)
 
 		/* Bit pattern (12-bits) detailing time to wake */
 		for (i = 0; i < 12; i++) {
-			strAVR = (onTime & mask ? 0x21 : 0x20) + ((11 - i) * 2);
+			avr_cmd = (onTime & mask ? 0x21 : 0x20) + ((11 - i) * 2);
 			mask >>= 1;
 
 			/* Output to AVR */
-			writeUART(strAVR);
+			writeUART(avr_cmd);
 		}
 
 		/* Complete output and set LED state (power) to pulse */
