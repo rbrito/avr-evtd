@@ -1,4 +1,6 @@
 /*
+ * @file avr-evtd.c
+ *
  * Linkstation AVR daemon
  *
  * Copyright © 2006 Bob Perry <lb-source@users.sf.net>
@@ -40,9 +42,9 @@
 /* A few defs for later */
 #define HOLD_TIME		1
 #define HOLD_SECONDS		3
-#define FIVE_MINUTES		5*60
-#define TWELVEHR		12*60
-#define TWENTYFOURHR		TWELVEHR*2
+#define FIVE_MINUTES		(5*60)
+#define TWELVEHR		(12*60)
+#define TWENTYFOURHR		(TWELVEHR*2)
 #define TIMER_RESOLUTION	4095
 #define FAN_SEIZE_TIME		30
 #define EM_MODE_TIME		20
@@ -81,20 +83,14 @@ typedef struct event event;
 
 /* Variables and macros that depend on the architecture */
 #ifdef MIPS
-
 static char avr_device[] = "/dev/ttyS0";
-#define MELCO_CONFIG_FILE	"/etc/melco/timer_status"
-
 #else
-
 static char avr_device[] = "/dev/ttyS1";
-#define MELCO_CONFIG_FILE	"/etc/melco/timer_sleep"
-
 #endif
 
 event *offTimer = NULL;
 event *onTimer = NULL;
-int FileDescriptor = 0;
+int serialfd = 0;
 time_t LastMelcoAccess = 0;
 int TimerFlag = 0;
 long ShutdownTimer = 9999;	/* Careful here */
@@ -103,16 +99,12 @@ char FirstWarning = 1;
 long OffTime = -1;		/* Default, NO defaults */
 long OnTime = -1;		/* Default, NO defaults */
 
-#ifdef MELCO
-char CommandLineUpdate = 0;
-#else
 char CommandLineUpdate = 1;
-#endif
 
-int checkPercentage = 90;
+int check_pct = 90;
 int last_day;
-int refreshRate = 40;
-int holdCycle = 3;
+int refresh_rate = 40;
+int hold_cycle = 3;
 char debug = 0;
 char pesterMessage = 0;
 int fanFaultSeize = 30;
@@ -123,34 +115,35 @@ char em_mode = 0;
 char rootdev[10] = "";		/* root filesystem device */
 char workdev[10] = "";		/* work filesystem device */
 int diskCheckNumber = 0;
-char keepAlive = 0x5B;
+char keepAlive = 0x5B;		/* '[' */
 char resetPresses = 0;
 int diskUsed = 0;
 
-/* Declarations */
+/* Function declarations */
 static void usage(void);
-static int check_timer(char type);
+static int check_timer(int type);
 static void termination_handler(int signum);
 static int open_serial(char *device);
 
-#ifdef MELCO
-static void parse_timer(char *buff);
-#endif
+static inline void ensure_limits(int *value, int lower, int upper);
 
 static void close_serial(void);
 static void avr_evtd_main(void);
 static char check_disk(void);
-static void set_avr_timer(char type);
+static void set_avr_timer(int type);
 static void parse_avr(char *buff);
 static void GetTime(long timeNow, event * pTimerLocate, long *time, long defaultTime);
 static int FindNextToday(long timeNow, event * pTimer, long *time);
 static int FindNextDay(event * pTimer, long *time, long *offset);
 static void destroyObject(event * pTimer);
 static void writeUART(char);
-static void errorReport(int errorNumber);
-static void execute_command1(char cmd);
-static void execute_command(char cmd, int cmd2);
+static void report_error(int number);
+static void execute_simple_command(char cmd);
+static void execute_cmd(char cmd, int cmd2);
 
+/**
+ * Print usage of the program.
+ */
 static void usage(void)
 {
 	printf("Usage: avr-evtd [OPTION...]\n"
@@ -164,31 +157,51 @@ static void usage(void)
 	exit(0);
 }
 
+
 /**
- * Handle ALL UART messages from a central point
+ * Ensure that value lies in the interval [@a lower, @a upper]. To avoid
+ * degenerate cases, we assume that @a lower <= @a upper.
+ *
+ * @param value Pointer to integer whose value is to be checked against limits.
+ * @param lower Integer specifying the lowest accepted value.
+ * @param upper Integer specifying the highest accepted value.
  */
-static void writeUART(char output_)
+static inline void ensure_limits(int* value, int lower, int upper)
+{
+	if (*value < lower) *value = lower;
+	if (*value > upper) *value = upper;
+}
+
+
+/**
+ * Write command to the UART.  The character received by the function is sent
+ * to the UART 4 (four) times in a row.
+ *
+ * @param cmd The command to be sent to the UART.
+ */
+static void writeUART(char cmd)
 {
 	char output[4];
-	output[0] = output[1] = output[2] = output[3] = output_;
-	write(FileDescriptor, output, 4);
+	output[0] = output[1] = output[2] = output[3] = cmd;
+	write(serialfd, output, 4);
 }
 
 /**
- * Establish connection to serial port and initialise it
+ * Establish connection to serial port and initialise it.
+ *
+ * @param device A string containing the device to be used to communicate with
+ * the UART.
+ *
+ * @return A negative value if problems were encountered and 0 otherwise.
  */
 static int open_serial(char *device)
 {
 	struct termios newtio;
 
-#ifndef MIPS
-	struct serial_struct serinfo;
-#endif
-
 	/* Need read/write access to the AVR */
-	FileDescriptor = open(device, O_RDWR | O_NOCTTY);
+	serialfd = open(device, O_RDWR | O_NOCTTY);
 
-	if (FileDescriptor < 0) {
+	if (serialfd < 0) {
 		perror(device);
 		return -1;
 	}
@@ -196,7 +209,8 @@ static int open_serial(char *device)
 #ifndef MIPS
 	/* Requested device memory address? */
 	if (2 == debug) {
-		ioctl(FileDescriptor, TIOCGSERIAL, &serinfo);
+		struct serial_struct serinfo;
+		ioctl(serialfd, TIOCGSERIAL, &serinfo);
 		if (serinfo.iomem_base)
 			printf("%p\n", serinfo.iomem_base);
 		else
@@ -205,7 +219,7 @@ static int open_serial(char *device)
 	}
 #endif
 
-	ioctl(FileDescriptor, TCFLSH, 2);
+	ioctl(serialfd, TCFLSH, 2);
 	/* Clear data structures */
 	memset(&newtio, 0, sizeof(newtio));
 	newtio.c_iflag = PARMRK;
@@ -218,47 +232,55 @@ static int open_serial(char *device)
 #endif
 
 	/* Update tty settings */
-	ioctl(FileDescriptor, TCSETS, &newtio);
+	ioctl(serialfd, TCSETS, &newtio);
 
-	ioctl(FileDescriptor, TCFLSH, 2);
+	ioctl(serialfd, TCFLSH, 2);
 
 	/* Initialise the AVR device this includes clearing down memory
 	 * and reseting the timer */
-	writeUART(0x41);
-	writeUART(0x46);
-	writeUART(0x4A);
-	writeUART(0x3E);
+	writeUART(0x41); /* 'A' */
+	writeUART(0x46); /* 'F' */
+	writeUART(0x4A); /* 'J' */
+	writeUART(0x3E); /* '>' */
 
 	/* Remove flashing DISK LED */
-	writeUART(0x58);
+	writeUART(0x58); /* 'X' */
 
 	return 0;
 }
 
 
+/**
+ *
+ * Close the serial port associated with @a serialfd. Additional action is
+ * taken to send a command to the UART to make it stop the timer.
+ *
+ */
 static void close_serial(void)
 {
-	if (FileDescriptor != 0) {
+	if (serialfd != 0) {
 		/* The AVR does not really need to see this, just stops
 		 * the timer watchdog which happens when it powers down
 		 * anyway */
 #ifndef MIPS
-		writeUART(0x4B);
+		writeUART(0x4B); /* 'K' */
 #endif
-		/* Close port and invalidate our pointer */
-		close(FileDescriptor);
-		FileDescriptor = 0;
+		close(serialfd);
 	}
 
 	/* Destroy the macro timer objects */
 	destroyObject(offTimer);
 	destroyObject(onTimer);
 
-	/* Tidy up please */
 	closelog();
 }
 
-
+/**
+ * Set up termination handlers when receiving signals.
+ *
+ * @param signum The number of the signal received by the daemon.
+ *
+ */
 static void termination_handler(int signum)
 {
 	switch (signum) {
@@ -273,8 +295,14 @@ static void termination_handler(int signum)
 }
 
 
-/* Execute event script handler with the appropriate commands */
-static void execute_command(char cmd, int cmd2)
+/**
+ * Execute event script handler with the appropriate commands
+ *
+ * @param cmd First part of the command to the event script
+ * @param cmd2 Second part of the command to the event script
+ *
+ */
+static void execute_cmd(char cmd, int cmd2)
 {
 	char cmd_line[CMD_LINE_LENGTH];
 
@@ -284,9 +312,16 @@ static void execute_command(char cmd, int cmd2)
 }
 
 
-static void execute_command1(char cmd)
+/**
+ * Abbreviated version of the executioner of the event script handler
+ *
+ * @param cmd Command to be sent to the event script. It must consist of a
+ * single character.
+ *
+ */
+static void execute_simple_command(char cmd)
 {
-	execute_command(cmd, 0);
+	execute_cmd(cmd, 0);
 }
 
 
@@ -320,9 +355,9 @@ static void avr_evtd_main(void)
 	tt_LastShutdownPing = time(NULL);
 
 	/* Loop whilst port is valid */
-	while (FileDescriptor) {
+	while (serialfd) {
 		tt_TimeoutPoll.tv_usec = 0;
-		iResult = refreshRate;
+		iResult = refresh_rate;
 		/* After file change or startup, update the time within
 		 * 20 secs as the user may have pushed the refresh time
 		 * out */
@@ -359,10 +394,10 @@ static void avr_evtd_main(void)
 		tt_TimeoutPoll.tv_sec = iResult;
 
 		FD_ZERO(&fReadFS);
-		FD_SET(FileDescriptor, &fReadFS);
+		FD_SET(serialfd, &fReadFS);
 
 		/* Wait for AVR message or time-out? */
-		iResult = select(FileDescriptor + 1, &fReadFS, NULL, NULL,
+		iResult = select(serialfd + 1, &fReadFS, NULL, NULL,
 				 &tt_TimeoutPoll);
 
 		tt_TimeNow = time(NULL);
@@ -370,13 +405,13 @@ static void avr_evtd_main(void)
 		/* catch input? */
 		if (iResult > 0) {
 			/* Read AVR message */
-			iResult = read(FileDescriptor, buf, 16);
+			iResult = read(serialfd, buf, 16);
 			/* AVR command detected so force to ping only */
 			checkState = -2;
 
 			switch (buf[0]) {
 				/* power button release */
-			case 0x20:
+			case 0x20: /* ' ' */
 				if (0 == PressedPowerFlag) {
 					cmd = POWER_RELEASE;
 
@@ -391,7 +426,7 @@ static void avr_evtd_main(void)
 						extraTime = 1;
 					}
 
-					execute_command1(cmd);
+					execute_simple_command(cmd);
 					tt_Power_Press = tt_TimeNow;
 				}
 
@@ -399,15 +434,15 @@ static void avr_evtd_main(void)
 				break;
 
 				/* power button push */
-			case 0x21:
-				execute_command1(POWER_PRESS);
+			case 0x21: /* '!' */
+				execute_simple_command(POWER_PRESS);
 
 				PressedPowerFlag = 0;
 				PushedPowerFlag = 1;
 				break;
 
 				/* reset button release */
-			case 0x22:
+			case 0x22: /* '"' */
 				if (0 == PressedResetFlag) {
 					cmd = RESET_RELEASE;
 					iResult = 0;
@@ -419,7 +454,7 @@ static void avr_evtd_main(void)
 						resetPresses++;
 					}
 
-					execute_command(cmd, iResult);
+					execute_cmd(cmd, iResult);
 					tt_Power_Press = tt_TimeNow;
 				}
 
@@ -427,23 +462,23 @@ static void avr_evtd_main(void)
 				break;
 
 				/* reset button push */
-			case 0x23:
-				execute_command1(RESET_PRESS);
+			case 0x23: /* '#' */
+				execute_simple_command(RESET_PRESS);
 
 				PressedResetFlag = 0;
 				PushedResetFlag = 1;
 				break;
 
 				/* Fan on high speed */
-			case 0x24:
+			case 0x24: /* '$' */
 				fan_fault = 6;
 				tt_fault_time = tt_TimeNow;
 				break;
 
 				/* Fan fault */
-			case 0x25:
+			case 0x25: /* '%' */
 				/* Flag the EventScript */
-				execute_command(FAN_FAULT, fan_fault);
+				execute_cmd(FAN_FAULT, fan_fault);
 
 				if (fanFaultSeize > 0) {
 					fan_fault = 2;
@@ -454,17 +489,17 @@ static void avr_evtd_main(void)
 				break;
 
 				/* Acknowledge */
-			case 0x30:
+			case 0x30: /* '0' */
 				break;
 
 				/* AVR halt requested */
-			case 0x31:
+			case 0x31: /* '1' */
 				close_serial();
-				execute_command1(AVR_HALT);
+				execute_simple_command(AVR_HALT);
 				break;
 
 				/* AVR initialisation complete */
-			case 0x33:
+			case 0x33: /* '3' */
 				break;
 #ifdef DEBUG
 			default:
@@ -480,7 +515,7 @@ static void avr_evtd_main(void)
 		} else {	/* Time-out event */
 			/* Check if button(s) are still held after
 			 * holdcyle seconds */
-			if ((tt_TimeIdle + holdCycle) < tt_TimeNow) {
+			if ((tt_TimeIdle + hold_cycle) < tt_TimeNow) {
 				/* Power down selected */
 				if (1 == PushedPowerFlag) {
 					/* Re-validate our time wake-up;
@@ -489,7 +524,7 @@ static void avr_evtd_main(void)
 					if (!extraTime)
 						set_avr_timer(1);
 
-					execute_command1(USER_POWER_DOWN);
+					execute_simple_command(USER_POWER_DOWN);
 
 					PushedPowerFlag = 0;
 					PressedPowerFlag = 1;
@@ -510,7 +545,7 @@ static void avr_evtd_main(void)
 					 * causes the box to boot from
 					 * ram-disk backup to recover
 					 * the HDD */
-					execute_command1(EM_MODE);
+					execute_simple_command(EM_MODE);
 
 					PushedResetFlag = 0;
 					PressedResetFlag = 1;
@@ -527,7 +562,7 @@ static void avr_evtd_main(void)
 
 						/* If time difference is more than a minute,
 						 * force a re-calculation of shutdown time */
-						if (refreshRate + 60 > abs(lTimerDiff)) {
+						if (refresh_rate + 60 > abs(lTimerDiff)) {
 							ShutdownTimer -= lTimerDiff;
 
 							/* Within five
@@ -538,7 +573,7 @@ static void avr_evtd_main(void)
 									FirstTimeFlag = 0;
 
 									/* Inform the EventScript */
-									execute_command(FIVE_SHUTDOWN,
+									execute_cmd(FIVE_SHUTDOWN,
 									     ShutdownTimer);
 
 									/* Re-validate out time
@@ -561,7 +596,7 @@ static void avr_evtd_main(void)
 						/* Prevent re-entry and
 						 * execute command */
 						PushedPowerFlag =  PressedResetFlag = 2;
-						execute_command1(TIMED_SHUTDOWN);
+						execute_simple_command(TIMED_SHUTDOWN);
 					}
 				}
 
@@ -596,19 +631,19 @@ static void avr_evtd_main(void)
 						/* Execute some user code on disk full */
 						if (FirstWarning) {
 							FirstWarning = pesterMessage;
-							execute_command(DISK_FULL, diskUsed);
+							execute_cmd(DISK_FULL, diskUsed);
 						}
 					}
 
 					/* Only update DISK LED on disk full change */
 					if (diskFull != currentStatus) {
 						/* LED status */
-						cmd = 0x56;
+						cmd = 0x56;  /* 'V' */
 						if (currentStatus)
 							cmd++;
 						else {
 							FirstWarning = 0;
-							execute_command(DISK_FULL, 0);
+							execute_cmd(DISK_FULL, 0);
 						}
 
 						diskFull = currentStatus;
@@ -642,7 +677,7 @@ static void avr_evtd_main(void)
 					/* Run some user script on no
 					 * fan restart message after
 					 * FAN_FAULT_SEIZE time */
-					execute_command(FAN_FAULT, 4);
+					execute_cmd(FAN_FAULT, 4);
 					fan_fault = 5;
 				}
 
@@ -651,7 +686,7 @@ static void avr_evtd_main(void)
 			case 6:
 				/* Attempt to slow fan down again after 5 minutes */
 				if ((tt_fault_time + FIVE_MINUTES) < tt_TimeNow) {
-					writeUART(0x5C);
+					writeUART(0x5C);  /* '\\' */
 					fan_fault = 1;
 				}
 
@@ -663,7 +698,7 @@ static void avr_evtd_main(void)
 			 * the delayed time */
 			if ((tt_Power_Press + SP_MONITOR_TIME) < tt_TimeNow && FirstTimeFlag > 1) {
 				/* Inform the EventScript */
-				execute_command(FIVE_SHUTDOWN, (int) (ShutdownTimer/60.0));
+				execute_cmd(FIVE_SHUTDOWN, (int) (ShutdownTimer/60.0));
 				FirstTimeFlag = 1;
 				tt_Power_Press = 0;
 			}
@@ -742,7 +777,7 @@ int main(int argc, char *argv[])
 
 #ifndef MIPS
 	if (debug > 1) {
-		close(FileDescriptor);
+		close(serialfd);
 		exit(0);
 	}
 #endif
@@ -765,15 +800,20 @@ int main(int argc, char *argv[])
 }
 
 
-static void errorReport(int errorNumber)
+/**
+ * Report errors. This function sends an error command to the UART.
+ *
+ * @param number An integer containing the number of the error to report.
+ */
+static void report_error(int number)
 {
-	execute_command(ERRORED, errorNumber);
+	execute_cmd(ERRORED, number);
 }
 
 
 /**
  * Check that the filesystem is intact and we have at least DISKCHECK%
- * spare capacity
+ * spare capacity.
  *
  * NOTE: DISK FULL LED may flash during a disk check as /dev/hda3 mount
  * check will not be available, this is not an error and light will
@@ -842,7 +882,7 @@ static char check_disk(void)
 
 	/* Only perform these tests if DISKCHECK is enabled and
 	 * partition's havev been defined */
-	if (checkPercentage > 0 && diskCheckNumber > 0) {
+	if (check_pct > 0 && diskCheckNumber > 0) {
 		errno = -1;
 		/* Ensure root and/or working paths have been located */
 		if (diskCheckNumber == FirstTime) {
@@ -852,9 +892,9 @@ static char check_disk(void)
 				/* This is okay for ext2/3 but may not
 				 * be correct for other formats */
 				if (0 == errno) {
-					total = 100 - (int) (100.0 * mountfs.f_bavail)/mountfs.f_blocks;
+					total = 100 - (int) ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
 
-					if (total >= checkPercentage)
+					if (total >= check_pct)
 						bFull = 1;
 				}
 			}
@@ -863,8 +903,8 @@ static char check_disk(void)
 				/* check work partition */
 				errno = statfs(work_mountpt, &mountfs);
 				if (0 == errno) {
-					total2 = 100 - (int) (100.0 * mountfs.f_bavail)/mountfs.f_blocks;
-					if (total2 >= checkPercentage)
+					total2 = 100 - (int) ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
+					if (total2 >= check_pct)
 						bFull = 1;
 				}
 			}
@@ -873,7 +913,7 @@ static char check_disk(void)
 		/* Ensure device is mounted */
 		if (0 != errno) {
 			/* Indicate the /mnt is not available */
-			writeUART(0x59);
+			writeUART(0x59); /* 'Y' */
 		}
 	}
 
@@ -884,117 +924,12 @@ static char check_disk(void)
 	return bFull;
 }
 
-#ifdef MELCO
-#ifndef MIPS
-/**
- * Parse time requests
- */
-static void parse_timer(char *buff)
-{
-	int offHour, offMinutes, onHour, onMinutes;
-	long offTime = -1, onTime = -1;
-
-	/* Parse the data for breakdown later */
-	if (sscanf(buff, "on<>%02d:%02d<>%02d:%02d", &offHour, &offMinutes, &onHour, &onMinutes)) {
-		TimerFlag = 1;
-		offTime = (offHour * 60) + offMinutes;
-		onTime = (onHour * 60) + onMinutes;
-	} else
-	    if (sscanf
-		(buff, "off<>%02d:%02d<>%02d:%02d", &offHour, &offMinutes, &onHour, &onMinutes)) {
-		TimerFlag = 0;
-	} else {
-		TimerFlag = 0;
-	}
-
-	if (1 == TimerFlag) {
-		OffTime = offTime;
-		OnTime = onTime;
-	}
-}
-#else
-static void parse_timer(char *buff)
-{
-	/*
-	   type=off
-	   backup_status=off
-	   backup_time=0:00
-	   backup_type=day
-	   backup_week=Sun
-	   backup_overwrite=off
-	   sleep_start=0:00
-	   sleep_finish=9:00
-	 */
-	const char *command[] = { "type", "backup_time", "sleep_start", "sleep_finish" };
-	char *pos;
-	int i;
-	int cmd = 0;
-	int backupHour, backupMinutes, offHour, offMinutes, onHour,
-	    onMinutes;
-	long offTime, onTime;
-
-	TimerFlag = 0;
-
-	/* Parse our time requests */
-	pos = strtok(buff, "=\n");
-
-	/* Parse the data for breakdown later */
-	for (i = 0; i < 16; i++) {
-		cmd = -1;
-		/* Locate our expected commands */
-		for (cmd = 0; cmd < 4; cmd++)
-			if (strcasecmp(pos, command[cmd]) == 0)
-				break;
-
-		pos = strtok(NULL, "=\n");
-		if (!pos)
-			break;
-
-		/* Now parse the setting
-		   type is sleep otherwise deemed off
-		   backup_time expects HH:MM NOT CURRENTLY SUPPORTED
-		   sleep_start expects HH:MM if not, then timer is disabled
-		   sleep_finish expects HH:MM if not, then timer is disabled
-		 */
-		switch (cmd) {
-		case 0:
-			if (strcasecmp(pos, "sleep") == 0)
-				TimerFlag = 1;
-			break;
-		case 1:
-			sscanf(pos, "%02d:%02d", &backupHour,
-			       &backupMinutes);
-			break;
-		case 2:
-			if (!sscanf
-			    (pos, "%02d:%02d", &offHour, &offMinutes))
-				TimerFlag = -1;
-			break;
-		case 3:
-			if (!sscanf(pos, "%02d:%02d", &onHour, &onMinutes))
-				TimerFlag = -1;
-			break;
-		}
-	}
-
-	/* Failed timer needs timer=sleep and both off time and on time
-	 * to be specified */
-	if (1 == TimerFlag) {
-		offTime = (offHour * 60) + offMinutes;
-		onTime = (onHour * 60) + onMinutes;
-
-		OffTime = offTime;
-		OnTime = onTime;
-	} else if (TimerFlag != 0) {
-		TimerFlag = 0;
-		errorReport(4);
-	}
-}
-#endif
-#endif
 
 /**
- * Parse configuration file /etc/default/avr-evtd
+ * Parse configuration file.
+ *
+ * @param buff A buffer containing the contents of the configuration file
+ * (usually, /etc/default/avr-evtd).
  */
 static void parse_avr(char *buff)
 {
@@ -1042,8 +977,8 @@ static void parse_avr(char *buff)
 	/* Establish some defaults */
 	pesterMessage = 0;
 	TimerFlag = 0;
-	refreshRate = 40;
-	holdCycle = 3;
+	refresh_rate = 40;
+	hold_cycle = 3;
 	diskCheckNumber = 0;
 
 	/* To prevent looping */
@@ -1146,7 +1081,7 @@ static void parse_avr(char *buff)
 							 * next event
 							 * object */
 							pTimer->next = calloc(sizeof(event),
-										 sizeof(char));
+									      sizeof(char));
 							pTimer = pTimer->next;
 						}
 					} else {
@@ -1154,7 +1089,7 @@ static void parse_avr(char *buff)
 						pTimer->time = (iHour * 60) + iMinutes;
 						/* Allocate space for the next event object */
 						pTimer->next = calloc(sizeof(event),
-									 sizeof(char));
+								      sizeof(char));
 						pTimer = pTimer->next;
 					}
 				}
@@ -1177,35 +1112,23 @@ static void parse_avr(char *buff)
 
 			/* Disk check percentage? */
 		case 5:
-			if (!sscanf(pos, "%d", &checkPercentage))
-				checkPercentage = -1;
-			/* Ensure valid percentage range */
-			else if (checkPercentage > 100)
-				checkPercentage = 100;
-			else if (checkPercentage < 0)
-				checkPercentage = -1;
+			if (!sscanf(pos, "%d", &check_pct))
+				check_pct = -1;
+			ensure_limits(&check_pct, -1, 100);
 			break;
 
 			/* Refresh/re-scan time? */
 		case 6:
-			if (sscanf(pos, "%03d", &refreshRate))
-				refreshRate = 40;
-			/* Limit to something sensible */
-			else if (refreshRate > FIVE_MINUTES)
-				refreshRate = FIVE_MINUTES;
-			else if (refreshRate < 10)
-				refreshRate = 1;
+			if (!sscanf(pos, "%03d", &refresh_rate))
+				refresh_rate = 40;
+			ensure_limits(&refresh_rate, 10, FIVE_MINUTES);
 			break;
 
 			/* Button hold-in time? */
 		case 7:
-			if (sscanf(pos, "%02d", &holdCycle))
-				holdCycle = HOLD_SECONDS;
-			/* Limit to something sensible */
-			else if (holdCycle > 10)
-				holdCycle = 10;
-			else if (holdCycle < 2)
-				holdCycle = 2;
+			if (!sscanf(pos, "%02d", &hold_cycle))
+				hold_cycle = HOLD_SECONDS;
+			ensure_limits(&hold_cycle, 2, 10);
 			break;
 
 			/* Macro days in week? */
@@ -1239,13 +1162,9 @@ static void parse_avr(char *buff)
 			if (strcasecmp(pos, "OFF") == 0)
 				fanFaultSeize = 0;
 			else {
-				if (sscanf(pos, "%02d", &fanFaultSeize))
+				if (!sscanf(pos, "%02d", &fanFaultSeize))
 					fanFaultSeize = FAN_SEIZE_TIME;
-				/* Limit to something sensible */
-				else if (fanFaultSeize > 60)
-					fanFaultSeize = 60;
-				else if (fanFaultSeize < 1)
-					fanFaultSeize = 1;
+				ensure_limits(&fanFaultSeize, 1, 60);
 			}
 			break;
 
@@ -1265,13 +1184,17 @@ static void parse_avr(char *buff)
 
 	if (TimerFlag < 0) {
 		TimerFlag = 0;
-		errorReport(3);
+		report_error(3);
 	}
 }
 
 
 /**
  * Destroys time objects
+ *
+ * @param pTimer A pointer to the event structure containing the head of the
+ * linked list of events to be deleted.
+ *
  */
 static void destroyObject(event * pTimer)
 {
@@ -1286,9 +1209,9 @@ static void destroyObject(event * pTimer)
 
 
 /**
- * Scan macro objects for a valid event from 'time' today
+ * Scan macro objects for a valid event from @a time today
  */
-static int FindNextToday(long timeNow, event * pTimer, long *time)
+static int FindNextToday(long timeNow, event *pTimer, long *time)
 {
 	int iLocated = 0;
 
@@ -1308,37 +1231,37 @@ static int FindNextToday(long timeNow, event * pTimer, long *time)
 
 
 /**
- * Locate the next valid event
+ * Find one next event in the linked list beginning with @a cur with day
+ * strictly greater than @a last_day.
+ *
+ * @param cur Initial cell of a linked list of events.
+ * @param time The time of the next event found, if any.
+ * @param offset The difference in minutes between @a last_day and the day of
+ * the event found by the function, if any.
+ *
+ * @return 1 if an event was found and 0 otherwise.
  */
-static int FindNextDay(event * pTimer, long *time, long *offset)
+static int FindNextDay(event *cur, long *time, long *offset)
 {
-	int iLocated = 0;
+	int found = 0;
 
-	while (pTimer != NULL && pTimer->next != NULL) {
-		/* Next event for tomorrow onwards? */
-		if (pTimer->day > last_day) {
-			/* Grouped events?, ie only tomorrow */
-			if (pTimer->day > last_day)
-				*offset =
-				    (pTimer->day -
-				     last_day) * TWENTYFOURHR;
-
-			iLocated = 1;
-			*time = pTimer->time;
-			pTimer = NULL;
-		} else {
-			pTimer = pTimer->next;
+	while (cur != NULL && !found) {
+		if (cur->day > last_day) {
+			*offset = (cur->day - last_day) * TWENTYFOURHR;
+			*time = cur->time;
+			found = 1;
 		}
+		cur = cur->next;
 	}
 
-	return iLocated;
+	return found;
 }
 
 
 /**
- * Get next timed macro event
+ * Get next timed macro event.
  */
-static void GetTime(long timeNow, event * pTimerLocate, long *time, long defaultTime)
+static void GetTime(long timeNow, event *pTimerLocate, long *time, long defaultTime)
 {
 	long lOffset = 0;
 	char onLocated = 0;
@@ -1361,9 +1284,7 @@ static void GetTime(long timeNow, event * pTimerLocate, long *time, long default
 		/* Nothing for week-end, look at start */
 		if (0 == onLocated) {
 			*time = pTimerLocate->time;
-			lOffset =
-			    ((6 - last_day) +
-			     pTimerLocate->day) * TWENTYFOURHR;
+			lOffset = ((6 - last_day) + pTimerLocate->day) * TWENTYFOURHR;
 		}
 
 		*time += lOffset;
@@ -1374,11 +1295,12 @@ static void GetTime(long timeNow, event * pTimerLocate, long *time, long default
 		*time = defaultTime;
 }
 
+
 /**
  * Determine shutdown/power up time and fire relevant string update to
- * the AVR
+ * the AVR.
  */
-static void set_avr_timer(char type)
+static void set_avr_timer(int type)
 {
 	const char *strMessage[] = { "file update", "re-validation", "clock skew" };
 	long current_time, wait_time;
@@ -1412,8 +1334,7 @@ static void set_avr_timer(char type)
 		if (offTime < current_time) {
 			twelve = 1;
 			ShutdownTimer =
-			    ((TWELVEHR +
-			      (offTime - (current_time - TWELVEHR))) * 60);
+			    ((TWELVEHR + (offTime - (current_time - TWELVEHR))) * 60);
 		} else {
 			ShutdownTimer = ((offTime - current_time) * 60);
 		}
@@ -1433,12 +1354,9 @@ static void set_avr_timer(char type)
 		/* Correct to AVR oscillator */
 		if (onTime < current_time) {
 			wait_time =
-			    (TWELVEHR +
-			     (onTime - (current_time - TWELVEHR))) * 60;
+			    (TWELVEHR + (onTime - (current_time - TWELVEHR))) * 60;
 			onTime =
-			    ((TWELVEHR +
-			      (onTime -
-			       (current_time - TWELVEHR))) * 100) / 112;
+			    ((TWELVEHR + (onTime - (current_time - TWELVEHR))) * 100) / 112;
 		} else {
 			if (onTime < (offTime - TWENTYFOURHR))
 				onTime += TWENTYFOURHR;
@@ -1451,11 +1369,9 @@ static void set_avr_timer(char type)
 
 		/* Limit max off time to next power-on to the resolution of the timer */
 		if (onTime > TIMER_RESOLUTION
-		    && (onTime - (ShutdownTimer / 60)) >
-		    TIMER_RESOLUTION) {
-			wait_time -=
-			    ((onTime - TIMER_RESOLUTION) * 672) / 10;
-			errorReport(2);
+		    && (onTime - (ShutdownTimer / 60)) > TIMER_RESOLUTION) {
+			wait_time -= ((onTime - TIMER_RESOLUTION) * 672) / 10;
+			report_error(2);
 			/* Reset to timer resolution */
 			onTime = TIMER_RESOLUTION;
 		}
@@ -1467,20 +1383,19 @@ static void set_avr_timer(char type)
 			"%s-%02d/%02d %02d:%02d (Following timer %s)",
 			message, decode_time->tm_mon + 1,
 			decode_time->tm_mday, decode_time->tm_hour,
-			decode_time->tm_min, strMessage[(int) type]);
+			decode_time->tm_min, strMessage[type]);
 
 		syslog(LOG_INFO, message);
 
 		/* Now tell the AVR we are updating the 'on' time */
-		writeUART(0x3E);
-		writeUART(0x3C);
-		writeUART(0x3A);
-		writeUART(0x38);
+		writeUART(0x3E); /* '>' */
+		writeUART(0x3C); /* '<' */
+		writeUART(0x3A); /* ':' */
+		writeUART(0x38); /* '8' */
 
 		/* Bit pattern (12-bits) detailing time to wake */
 		for (i = 0; i < 12; i++) {
-			strAVR =
-			    (onTime & mask ? 0x21 : 0x20) + ((11 - i) * 2);
+			strAVR = (onTime & mask ? 0x21 : 0x20) + ((11 - i) * 2);
 			mask >>= 1;
 
 			/* Output to AVR */
@@ -1488,13 +1403,13 @@ static void set_avr_timer(char type)
 		}
 
 		/* Complete output and set LED state (power) to pulse */
-		writeUART(0x3F);
-		keepAlive = 0x5B;
+		writeUART(0x3F); /* '?' */
+		keepAlive = 0x5B; /* '[' */
 	}
 	/* Inform AVR its not in timer mode */
 	else {
-		writeUART(0x3E);
-		keepAlive = 0x5A;
+		writeUART(0x3E); /* '>' */
+		keepAlive = 0x5A; /* 'Z' */
 	}
 
 	writeUART(keepAlive);
@@ -1502,63 +1417,15 @@ static void set_avr_timer(char type)
 
 
 /**
- * Check to see if we need to perform an update.  We check the original
- * melco timer file (timer_sleep) for timer requests if required
+ * Check to see if we need to perform an update.
  */
-static int check_timer(char type)
+static int check_timer(int type)
 {
-	int iReturn = 1;
+	int retcode = 1;
 	int iRead;
-	int errno;
 	char buff[4096];
 	int file;
 	struct stat filestatus;
-
-#ifdef MELCO
-	/* Expect its a file time read required?
-	   This is purely for legacy timer files only.
-	   If this does not exist, then we look for our default */
-	if (0 == CommandLineUpdate) {
-		CommandLineUpdate = 1;
-
-		/* Get file status of sleep timer file */
-		errno = stat(MELCO_CONFIG_FILE, &filestatus);
-
-		/* If exists? */
-		if (0 == errno) {
-			/* Has this file changed? */
-			if (filestatus.st_mtime != LastMelcoAccess) {
-				iRead = -1;
-
-				/* Open and read the contents */
-				file = open(MELCO_CONFIG_FILE, O_RDONLY);
-				if (file) {
-					iRead = read(file, buff, sizeof(buff));
-
-					/* Dump the file pointer for others */
-					close(file);
-
-					if (iRead > 0)
-						parse_timer(buff);
-				}
-
-				if (iRead > 0) {
-					/* Return flag */
-					iReturn = CommandLineUpdate = 0;
-					set_avr_timer(type);
-				}
-			} else
-				CommandLineUpdate = 0;
-
-			/* Update our lasttimes timer file access */
-			LastMelcoAccess = filestatus.st_mtime;
-		} else {	/* standard Melco files do not exist,
-				 * back to the avr-evtd defaults */
-			LastMelcoAccess = 0;
-			CommandLineUpdate = 1;
-		}
-	}
-#endif
 
 	/* Time from avr-evtd configuration file */
 	if (1 == CommandLineUpdate) {
@@ -1566,23 +1433,20 @@ static int check_timer(char type)
 		 * again */
 		CommandLineUpdate = 2;
 
-		errno = stat(CONFIG_FILE_LOCATION, &filestatus);
-
-		/* If exists? */
-		if (0 == errno) {
+		if (stat(CONFIG_FILE_LOCATION, &filestatus) == 0) {
 			/* Has this file changed? */
 			if (filestatus.st_mtime != LastMelcoAccess) {
 				file = open(CONFIG_FILE_LOCATION, O_RDONLY);
 
 				if (file) {
-					iRead = read(file, buff, 4095);
+					iRead = read(file, buff, sizeof(buff)-1);
 
 					/* Dump the file pointer for others */
 					close(file);
 
 					if (iRead > 0) {
 						/* Return flag */
-						iReturn = 0;
+						retcode = 0;
 						CommandLineUpdate = 1;
 						parse_avr(buff);
 						set_avr_timer(type);
@@ -1593,6 +1457,8 @@ static int check_timer(char type)
 
 			/* Update our lasttimes timer file access */
 			LastMelcoAccess = filestatus.st_mtime;
+		} else {
+			/* The file could not be stat'ed */
 		}
 	}
 
@@ -1601,8 +1467,8 @@ static int check_timer(char type)
 	if (2 == CommandLineUpdate) {
 		CommandLineUpdate = 3;
 		set_avr_timer(type);
-		errorReport(1);
+		report_error(1);
 	}
 
-	return iReturn;
+	return retcode;
 }
