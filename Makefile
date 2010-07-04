@@ -29,11 +29,6 @@ ifeq (${MACHINE}, mips)
 	CFLAGS += -DMIPS
 endif
 
-ifeq (0, $(shell test -d /etc/melco))
-	CFLAGS += -DMELCO
-endif
-
-
 # Main targets
 all: avr-evtd
 
@@ -41,7 +36,7 @@ avr-evtd: avr-evtd.c
 	$(CC) $(CFLAGS) -o avr-evtd avr-evtd.c
 
 clean:
-	rm -f avr-evtd
+	rm -f avr-evtd *~ *.o
 	rm -f /etc/init.d/avr-evtd
 	rm -f /etc/default/avr-evtd.sample
 	rm -f /etc/avr_evtd/EventScript
