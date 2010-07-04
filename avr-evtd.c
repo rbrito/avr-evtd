@@ -141,6 +141,7 @@ static void report_error(int number);
 static void execute_simple_command(char cmd);
 static void execute_cmd(char cmd, int cmd2);
 
+
 /**
  * Print usage of the program.
  */
@@ -185,6 +186,7 @@ static void writeUART(char cmd)
 	output[0] = output[1] = output[2] = output[3] = cmd;
 	write(serialfd, output, 4);
 }
+
 
 /**
  * Establish connection to serial port and initialise it.
@@ -233,11 +235,9 @@ static int open_serial(char *device)
 
 	/* Update tty settings */
 	ioctl(serialfd, TCSETS, &newtio);
-
 	ioctl(serialfd, TCFLSH, 2);
 
-	/* Initialise the AVR device this includes clearing down memory
-	 * and reseting the timer */
+	/* Initialise the AVR device: clear memory and reset the timer */
 	writeUART(0x41); /* 'A' */
 	writeUART(0x46); /* 'F' */
 	writeUART(0x4A); /* 'J' */
@@ -259,9 +259,9 @@ static int open_serial(char *device)
 static void close_serial(void)
 {
 	if (serialfd != 0) {
-		/* The AVR does not really need to see this, just stops
-		 * the timer watchdog which happens when it powers down
-		 * anyway */
+		/* Stop the watchdog timer */
+		/* NOTE: the AVR does not really need to see this, just
+		 * which happens when it powers down anyway */
 #ifndef MIPS
 		writeUART(0x4B); /* 'K' */
 #endif
@@ -274,6 +274,7 @@ static void close_serial(void)
 
 	closelog();
 }
+
 
 /**
  * Set up termination handlers when receiving signals.
