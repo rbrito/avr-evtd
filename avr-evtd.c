@@ -1404,9 +1404,7 @@ static void set_avr_timer(int type)
 		/* Complete output and set LED state (power) to pulse */
 		writeUART(0x3F); /* '?' */
 		keepAlive = 0x5B; /* '[' */
-	}
-	/* Inform AVR its not in timer mode */
-	else {
+	} else { 	/* Inform AVR its not in timer mode */
 		writeUART(0x3E); /* '>' */
 		keepAlive = 0x5A; /* 'Z' */
 	}
