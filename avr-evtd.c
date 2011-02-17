@@ -1375,6 +1375,7 @@ static void set_avr_timer(int type)
 		ttime = ltime + wait_time;
 		decode_time = localtime(&ttime);
 
+		/* FIXME: this has undefined behaviour and should be fixed -- rbrito */
 		sprintf(message,
 			"%s-%02d/%02d %02d:%02d (Following timer %s)",
 			message, decode_time->tm_mon + 1,
