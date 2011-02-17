@@ -83,10 +83,12 @@ typedef struct event event;
 
 /* Variables and macros that depend on the architecture */
 #ifdef MIPS
-static char avr_device[] = "/dev/ttyS0";
+#define STD_DEVICE	"/dev/ttyS0"
 #else
-static char avr_device[] = "/dev/ttyS1";
+#define STD_DEVICE	"/dev/ttyS1"
 #endif
+
+static char avr_device[] = STD_DEVICE;
 
 event *offTimer = NULL;
 event *onTimer = NULL;
