@@ -1307,7 +1307,6 @@ static void set_avr_timer(int type)
 	struct tm *decode_time;
 	char message[80];
 	char avr_cmd;
-	char twelve;
 	int i;
 	long mask = 0x800;
 	long offTime, onTime;
@@ -1329,9 +1328,7 @@ static void set_avr_timer(int type)
 			GetTime(offTime, onTimer, &onTime, OnTime);
 
 		/* Protect for tomorrows setting */
-		twelve = 0;
 		if (offTime < current_time) {
-			twelve = 1;
 			ShutdownTimer =
 			    ((TWELVEHR + (offTime - (current_time - TWELVEHR))) * 60);
 		} else {
