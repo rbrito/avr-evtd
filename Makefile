@@ -2,7 +2,8 @@
 # Makefile for the Linkstation AVR Event daemon running under Linux
 #
 # Copyright 2008 Bob Perry
-# Copyright 2008, 2009 Rogério Brito <rbrito@users.sf.net>
+# Copyright 2008-2011 Rogério Brito <rbrito@users.sf.net>
+#
 TITLE=Linkstation AVR Event daemon
 
 #
