@@ -297,9 +297,7 @@ static void termination_handler(int signum)
 	switch (signum) {
 	case SIGTERM:
 		close_serial();
-		exit(0);
-	case SIGCONT:
-		break;
+		exit(EXIT_SUCCESS);
 	default:
 		break;
 	}
