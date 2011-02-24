@@ -736,103 +736,75 @@ static char check_disk(void)
 	static char root_mountpt[16];
 	static char work_mountpt[16];
 	struct statfs mountfs;
-	char bFull = 0;
-	int errno;
-	int total = 0;
-	int total2 = 0;
+	int pct_root = 0; /* percentage of the root fs that is used */
+	int pct_work = 0; /* percentage of the work fs that is used */
 	char cmd;
 	char *pos;
 	int file;
-	int iRead;
 	int i;
 	char buff[4096];
 
-	/* First time then determine paths */
-	if (FirstTime < diskcheck_number) {
+	if (FirstTime < diskcheck_number) { /* first, determine paths from mtab */
 		FirstTime = 0;
-		/* Get list of mounted devices */
-		file = open("/etc/mtab", O_RDONLY);
 
-		/* Read in the mounted devices */
-		if (file) {
-			iRead = read(file, buff, 4095);
+		if ((file = open("/etc/mtab", O_RDONLY)) < 0)
+			goto err_not_avail;
 
+		if (read(file, buff, 4095) > 0) {
 			pos = strtok(buff, " \n");
-			if (iRead > 0) {
-				for (i = 0; i < 60; i++) {
-					cmd = -1;
+			for (i = 0; i < 60; i++) {
+				cmd = -1;
 
-					if (strcasecmp(pos, rootdev) == 0)
-						cmd = 0;
-					else if (strcasecmp(pos, workdev) == 0)
-						cmd = 1;
+				if (strcasecmp(pos, rootdev) == 0)
+					cmd = 0;
+				else if (strcasecmp(pos, workdev) == 0)
+					cmd = 1;
 
-					pos = strtok(NULL, " \n");
-					if (!pos)
-						break;
+				pos = strtok(NULL, " \n");
+				if (!pos)
+					break;
 
-					/* Increment firsttime check,
-					 * with bad restarts, /dev/hda3
-					 * may not be mounted yet
-					 * (running a disk check) */
-					switch (cmd) {
-					case 0:
-						sprintf(root_mountpt, "%s", pos);
-						FirstTime++;
-						break;
-					case 1:
-						sprintf(work_mountpt, "%s", pos);
-						FirstTime++;
-						break;
-					}
+				/* Increment firsttime check, with bad
+				 * restarts, /dev/hda3 may not be mounted
+				 * yet (running a disk check) */
+				switch (cmd) {
+				case 0:
+					sprintf(root_mountpt, "%s", pos);
+					break;
+				case 1:
+					sprintf(work_mountpt, "%s", pos);
+					break;
 				}
+				FirstTime++;
 			}
 		}
 		close(file);
 	}
 
-	/* Only perform these tests if DISKCHECK is enabled and
-	 * partition's havev been defined */
+	/* Only test when DISKCHECK is enabled and partitions are defined */
+	/* FIXME: Is this kind of test correct for any kind of filesystem? */
 	if (check_pct > 0 && diskcheck_number > 0) {
-		errno = -1;
-		/* Ensure root and/or working paths have been located */
 		if (diskcheck_number == FirstTime) {
-			/* check root partition */
 			if (strlen(root_mountpt) > 0) {
-				errno = statfs(root_mountpt, &mountfs);
-				/* This is okay for ext2/3 but may not
-				 * be correct for other formats */
-				if (0 == errno) {
-					total = 100 - (int) ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
-
-					if (total >= check_pct)
-						bFull = 1;
-				}
+				if (statfs(root_mountpt, &mountfs) == -1)
+					goto err_not_avail;
+				pct_root = 100 - (int) ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
 			}
 
 			if (strlen(work_mountpt) > 0) {
-				/* check work partition */
-				errno = statfs(work_mountpt, &mountfs);
-				if (0 == errno) {
-					total2 = 100 - (int) ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
-					if (total2 >= check_pct)
-						bFull = 1;
-				}
+				if (statfs(work_mountpt, &mountfs) == -1)
+					goto err_not_avail;
+				pct_work = 100 - (int) ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
 			}
-		}
-
-		/* Ensure device is mounted */
-		if (0 != errno) {
-			/* Indicate the /mnt is not available */
-			write_to_uart(0x59); /* 'Y' */
 		}
 	}
 
-	diskUsed = total2;
-	if (total > total2)
-		diskUsed = total;
+	diskUsed = (pct_root > pct_work) ? pct_root : pct_work;
+	return (diskUsed > check_pct);
 
-	return bFull;
+err_not_avail:
+	write_to_uart(0x59); /* 'Y' */
+	return 0;
 }
 
 
