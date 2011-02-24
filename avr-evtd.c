@@ -69,7 +69,7 @@
 /* Constants for readable code */
 #define COMMENT_PREFIX		'#'
 #define CONFIG_FILE_LOCATION	"/etc/default/avr-evtd"
-#define VERSION			"Linkstation/Kuro AVR daemon $Rev$\n"
+#define VERSION			"Linkstation/Kuro AVR daemon 1.7.7\n"
 #define CMD_LINE_LENGTH		64
 
 /* Macro event object definition */
