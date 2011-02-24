@@ -1417,7 +1417,7 @@ static void set_avr_timer(int type)
 static int check_timer(int type)
 {
 	int retcode = 1;
-	int iRead;
+	int res;
 	char buff[4096];
 	int file;
 	struct stat filestatus;
@@ -1434,12 +1434,12 @@ static int check_timer(int type)
 				file = open(CONFIG_FILE_LOCATION, O_RDONLY);
 
 				if (file) {
-					iRead = read(file, buff, sizeof(buff)-1);
+					res = read(file, buff, sizeof(buff)-1);
 
 					/* Dump the file pointer for others */
 					close(file);
 
-					if (iRead > 0) {
+					if (res > 0) {
 						/* Return flag */
 						retcode = 0;
 						CommandLineUpdate = 1;
