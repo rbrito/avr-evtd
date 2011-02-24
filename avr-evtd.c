@@ -397,8 +397,7 @@ static void avr_evtd_main(void)
 			/* If we have a fan failure report, then ping
 			 * frequently */
 			if (fan_fault > 0)
-				res =
-				    fan_fault == 6 ? fanFaultSeize : 2;
+				res = fan_fault == 6 ? fanFaultSeize : 2;
 		}
 
 		timeout_poll.tv_sec = res;
