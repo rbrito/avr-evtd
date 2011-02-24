@@ -512,12 +512,10 @@ static void avr_evtd_main(void)
 				/* AVR initialisation complete */
 			case 0x33: /* '3' */
 				break;
-#ifdef DEBUG
 			default:
 				if (buf[0] != 0)
 					syslog(LOG_INFO, "unknown message %X[%d]", buf[0], res);
 				break;
-#endif
 			}
 
 			/* Get time for use later */
