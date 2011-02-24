@@ -82,13 +82,7 @@ struct event {
 typedef struct event event;
 
 /* Variables and macros that depend on the architecture */
-#ifdef MIPS
-#define STD_DEVICE	"/dev/ttyS0"
-#else
-#define STD_DEVICE	"/dev/ttyS1"
-#endif
-
-static char avr_device[] = STD_DEVICE;
+static char avr_device[] = "/dev/ttyS1";
 
 event *off_timer = NULL;
 event *on_timer = NULL;
@@ -149,14 +143,10 @@ static void exec_cmd(char cmd, int cmd2);
 static void usage(void)
 {
 	printf("Usage: avr-evtd [OPTION...]\n"
-#ifndef MIPS
 	       "  -d DEVICE     listen for events on DEVICE\n"
 	       "  -i            display memory location for device used with -d\n"
-#endif
 	       "  -c            run in the foreground, not as a daemon\n"
-#ifndef UBOOT
 	       "  -e            force the device to enter emergency mode\n"
-#endif
 	       "  -v            display program version\n"
 	       "  -h            display this usage notice\n");
 }
@@ -214,7 +204,6 @@ static int open_serial(char *device, char probe)
 		return -1;
 	}
 
-#ifndef MIPS
 	if (probe) {
 		struct serial_struct serinfo;
 
@@ -227,19 +216,13 @@ static int open_serial(char *device, char probe)
 
 		return 0;
 	}
-#endif
 
 	ioctl(serialfd, TCFLSH, 2);
 	/* Clear data structures */
 	memset(&newtio, 0, sizeof(newtio));
 	newtio.c_iflag = PARMRK;
 	newtio.c_oflag = OPOST;
-
-#ifdef MIPS
-	newtio.c_cflag = 0x9FD;	/* CREAD | CS7 | B9600 */
-#else
 	newtio.c_cflag = PARENB | CLOCAL | CREAD | CSTOPB | CS8 | B9600;
-#endif
 
 	/* Update tty settings */
 	ioctl(serialfd, TCSETS, &newtio);
@@ -278,9 +261,7 @@ static void close_serial(void)
 {
 	if (serialfd != 0) {
 		/* Stop the watchdog timer */
-#ifndef MIPS
 		write_to_uart(0x4B); /* 'K' */
-#endif
 		close(serialfd);
 	}
 
@@ -539,7 +520,7 @@ static void avr_evtd_main(void)
 				}
 
 			}
-#ifndef UBOOT
+
 			/* Has user held the reset button long enough to request EM-Mode? */
 			if ((idle + EM_MODE_TIME) < time_now) {
 				if (pushedreset == 1 && em_mode) {
@@ -558,7 +539,7 @@ static void avr_evtd_main(void)
 					PressedResetFlag = 1;
 				}
 			}
-#endif
+
 			/* Skip this processing during power/reset scan */
 			if (!pushedreset && !pushedpower && FirstTimeFlag < 2) {
 				/* shutdown timer event? */
@@ -1356,7 +1337,6 @@ int main(int argc, char *argv[])
 	/* Parse any options */
 	while (argc >= 1 && '-' == (*argv)[0]) {
 		switch ((*argv)[1]) {
-#ifndef MIPS
 		case 'd':
 			--argc;
 			++argv;
@@ -1371,18 +1351,15 @@ int main(int argc, char *argv[])
 		case 'i':
 			probe = 1;
 			break;
-#endif
 		case 'c':
 			debug = 1;
 			break;
 		case 'v':
 			printf(VERSION);
 			exit(0);
-#ifndef	UBOOT
 		case 'e':
 			em_mode = 1;
 			break;
-#endif
 		case 'h':
 			usage();
 			exit(0);
@@ -1416,12 +1393,10 @@ int main(int argc, char *argv[])
 		exit(-3);
 	}
 
-#ifndef MIPS
 	if (debug > 1) {
 		close(serialfd);
 		exit(0);
 	}
-#endif
 
 	/* make child session leader */
 	setsid();
