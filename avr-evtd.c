@@ -1176,7 +1176,7 @@ static void GetTime(long timeNow, event *pTimerLocate, long *time, long defaultT
  */
 static void set_avr_timer(int type)
 {
-	const char *strMessage[] = { "file update", "re-validation", "clock skew" };
+	const char *msg_kind[] = { "file update", "re-validation", "clock skew" };
 	long current_time, wait_time;
 	time_t ltime, ttime;
 	struct tm *decode_time;
@@ -1247,14 +1247,10 @@ static void set_avr_timer(int type)
 		ttime = ltime + wait_time;
 		decode_time = localtime(&ttime);
 
-		/* FIXME: this has undefined behaviour and should be fixed -- rbrito */
-		sprintf(message,
-			"%s-%02d/%02d %02d:%02d (Following timer %s)",
+		syslog(LOG_INFO, "%s-%02d/%02d %02d:%02d (Following timer %s)",
 			message, decode_time->tm_mon + 1,
 			decode_time->tm_mday, decode_time->tm_hour,
-			decode_time->tm_min, strMessage[type]);
-
-		syslog(LOG_INFO, message);
+			decode_time->tm_min, msg_kind[type]);
 
 		/* Now tell the AVR we are updating the 'on' time */
 		write_to_uart(0x3E); /* '>' */
