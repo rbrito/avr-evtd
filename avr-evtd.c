@@ -1389,13 +1389,12 @@ int main(int argc, char *argv[])
 	signal(SIGINT, termination_handler);
 
 	/* Specified port? */
-	if (open_serial(avr_device, probe)) {
-		exit(-3);
-	}
+	if (open_serial(avr_device, probe))
+		return -3;
 
-	if (debug > 1) {
+	if (probe) {
 		close(serialfd);
-		exit(0);
+		return 0;
 	}
 
 	/* make child session leader */
@@ -1406,10 +1405,8 @@ int main(int argc, char *argv[])
 
 	/* Open logger for this daemon */
 	openlog("avr-daemon", LOG_PID | LOG_NOWAIT | LOG_CONS, LOG_WARNING);
-
 	syslog(LOG_INFO, "%s", VERSION);
 
-	/* Our main */
 	avr_evtd_main();
 
 	return 0;
