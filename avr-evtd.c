@@ -721,8 +721,13 @@ static void avr_evtd_main(void)
 int main(int argc, char *argv[])
 {
 
-	argc--;
-	argv++;
+	if (argc == 1) {
+		usage();
+		exit(1);
+	}
+
+	--argc;
+	++argv;
 
 	/* Parse any options */
 	while (argc >= 1 && '-' == (*argv)[0]) {
@@ -730,25 +735,27 @@ int main(int argc, char *argv[])
 #ifndef MIPS
 		case 'd':
 			--argc;
-			argv++;
-			sprintf(avr_device, "%s", *argv);
+			++argv;
+			if (argc >= 1) {
+				sprintf(avr_device, "%s", *argv);
+			} else {
+				printf("Option -d requires an argument.\n\n");
+				usage();
+				exit(1);
+			}
 			break;
 		case 'i':
-			--argc;
 			debug = 2;
 			break;
 #endif
 		case 'c':
-			--argc;
 			debug = 1;
 			break;
 		case 'v':
-			--argc;
 			printf(VERSION);
 			exit(0);
 #ifndef	UBOOT
 		case 'e':
-			--argc;
 			em_mode = 1;
 			break;
 #endif
@@ -756,11 +763,12 @@ int main(int argc, char *argv[])
 			usage();
 			exit(0);
 		default:
+			printf("Option unknown: %s.\n\n", *argv);
 			usage();
 			exit(1);
 		}
-		argc--;
-		argv++;
+		--argc;
+		++argv;
 	}
 
 	if (!debug) {
