@@ -107,7 +107,6 @@ int check_pct = 90;
 int last_day;
 int refresh_rate = 40;
 int hold_cycle = 3;
-char debug = 0;
 char pesterMessage = 0;
 int fanFaultSeize = 30;
 int checkState = 1;		/* Will force an update within 15
@@ -125,7 +124,7 @@ int diskUsed = 0;
 static void usage(void);
 static int check_timer(int type);
 static void termination_handler(int signum);
-static int open_serial(char *device);
+static int open_serial(char *device, char probe);
 
 static inline void ensure_limits(int *value, int lower, int upper);
 
@@ -200,27 +199,27 @@ static void write_to_uart(char cmd)
  *
  * @return A negative value if problems were encountered and 0 otherwise.
  */
-static int open_serial(char *device)
+static int open_serial(char *device, char probe)
 {
 	struct termios newtio;
 
 	/* Need read/write access to the AVR */
-	serialfd = open(device, O_RDWR | O_NOCTTY);
-
-	if (serialfd < 0) {
+	if ((serialfd = open(device, O_RDWR | O_NOCTTY) < 0)) {
 		perror(device);
 		return -1;
 	}
 
 #ifndef MIPS
-	/* Requested device memory address? */
-	if (debug == 2) {
+	if (probe) {
 		struct serial_struct serinfo;
+
 		ioctl(serialfd, TIOCGSERIAL, &serinfo);
+
 		if (serinfo.iomem_base)
 			printf("%p\n", serinfo.iomem_base);
 		else
 			printf("%X\n", serinfo.port);
+
 		return 0;
 	}
 #endif
@@ -1372,6 +1371,8 @@ static int check_timer(int type)
 
 int main(int argc, char *argv[])
 {
+	int probe = 0; /* mode in which we open the serial port */
+	int debug = 0; /* determine if we are in debug mode or not */
 
 	if (argc == 1) {
 		usage();
@@ -1397,7 +1398,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'i':
-			debug = 2;
+			probe = 1;
 			break;
 #endif
 		case 'c':
@@ -1424,11 +1425,9 @@ int main(int argc, char *argv[])
 	}
 
 	if (!debug) {
-		/* Run in background? */
-		if (daemon(0, 0) != 0) {
+		if (daemon(0, 0) != 0) /* fork to background */
 			exit(-1);
-		}
-	} else if (debug == 1)
+	} else
 		check_timer(0);
 
 	/* ignore tty signals */
@@ -1442,7 +1441,7 @@ int main(int argc, char *argv[])
 	signal(SIGINT, termination_handler);
 
 	/* Specified port? */
-	if (open_serial(avr_device)) {
+	if (open_serial(avr_device, probe)) {
 		exit(-3);
 	}
 
