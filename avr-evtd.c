@@ -1330,10 +1330,9 @@ static void set_avr_timer(int type)
 
 		/* Protect for tomorrows setting */
 		if (offTime < current_time) {
-			ShutdownTimer =
-			    ((TWELVEHR + (offTime - (current_time - TWELVEHR))) * 60);
+			ShutdownTimer = (TWELVEHR + (offTime - (current_time - TWELVEHR))) * 60;
 		} else {
-			ShutdownTimer = ((offTime - current_time) * 60);
+			ShutdownTimer = (offTime - current_time) * 60;
 		}
 
 		/* Remeber the current seconds passed the minute */
