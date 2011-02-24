@@ -720,16 +720,13 @@ static void avr_evtd_main(void)
 
 int main(int argc, char *argv[])
 {
-	char *thisarg;
 
 	argc--;
 	argv++;
 
 	/* Parse any options */
-	while (argc >= 1 && '-' == **argv) {
-		thisarg = *argv;
-		thisarg++;
-		switch (*thisarg) {
+	while (argc >= 1 && '-' == (*argv)[0]) {
+		switch ((*argv)[1]) {
 #ifndef MIPS
 		case 'd':
 			--argc;
