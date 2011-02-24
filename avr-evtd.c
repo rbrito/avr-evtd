@@ -155,9 +155,11 @@ static void usage(void)
 	       "  -i            display memory location for device used with -d\n"
 #endif
 	       "  -c            run in the foreground, not as a daemon\n"
+#ifndef UBOOT
+	       "  -e            force the device to enter emergency mode\n"
+#endif
 	       "  -v            display program version\n"
 	       "  -h            display this usage notice\n");
-	exit(0);
 }
 
 
@@ -747,15 +749,18 @@ int main(int argc, char *argv[])
 			--argc;
 			printf(VERSION);
 			exit(0);
+#ifndef	UBOOT
 		case 'e':
 			--argc;
 			em_mode = 1;
 			break;
+#endif
 		case 'h':
 			usage();
 			exit(0);
 		default:
 			usage();
+			exit(1);
 		}
 		argc--;
 		argv++;
