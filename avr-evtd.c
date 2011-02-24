@@ -194,10 +194,15 @@ static void write_to_uart(char cmd)
 /**
  * Establish connection to serial port and initialise it.
  *
- * @param device A string containing the device to be used to communicate with
- * the UART.
+ * @param device A string containing the device to be used to communicate
+ * with the UART.
  *
- * @return A negative value if problems were encountered and 0 otherwise.
+ * @param probe The value 0 if we are opening the device for regular use or
+ *              1 if we just want to probe the memory address associated
+ *              with @a device.
+ *
+ * @return A negative value if problems were encountered while opening @a
+ * device.
  */
 static int open_serial(char *device, char probe)
 {
