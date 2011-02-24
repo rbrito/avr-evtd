@@ -887,9 +887,9 @@ static void parse_avr(char *buff)
 		} else {
 			pos = strtok_r(NULL, "\n", &last);
 
-			/* After the first remark we have ignored, make
-			 * sure we detect a valid line and move the
-			 * tokeniser pointer if none remark field */
+			/* After the first remark we have ignored, make sure
+			 * we detect a valid line and move the tokeniser
+			 * pointer if none remark field */
 			if (pos[0] != COMMENT_PREFIX) {
 				j = strlen(pos);
 				*(last - 1) = ',';	/* Plug the '0' with token parameter  */
@@ -951,8 +951,8 @@ static void parse_avr(char *buff)
 					if (group != 0) {
 						j = first_day - 1;
 						/* Create the multiple
-						 * entries for each day
-						 * in range specified */
+						 * entries for each day in
+						 * range specified */
 						while (j != process_day) {
 							j++;
 							if (j > 7)
@@ -1020,8 +1020,7 @@ static void parse_avr(char *buff)
 			/* Remove grouping flag for next defintion */
 			last_group += group;
 			if (last_group > 2) {
-				group = 0;
-				last_group = 0;
+				group = last_group = 0;
 			}
 
 			if (last_group == 1)
@@ -1203,11 +1202,10 @@ static void set_avr_timer(int type)
 			GetTime(offTime, on_timer, &onTime, OnTime);
 
 		/* Protect for tomorrows setting */
-		if (offTime < current_time) {
+		if (offTime < current_time)
 			ShutdownTimer = (TWELVEHR + (offTime - (current_time - TWELVEHR))) * 60;
-		} else {
+		else
 			ShutdownTimer = (offTime - current_time) * 60;
-		}
 
 		/* Remeber the current seconds passed the minute */
 		ShutdownTimer -= decode_time->tm_sec;
