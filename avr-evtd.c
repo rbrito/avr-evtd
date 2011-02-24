@@ -745,7 +745,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'v':
 			--argc;
-			printf("%s", VERSION);
+			printf(VERSION);
 			exit(0);
 		case 'e':
 			--argc;
