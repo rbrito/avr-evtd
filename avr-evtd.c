@@ -1309,7 +1309,12 @@ static void set_avr_timer(int type)
 
 
 /**
- * Check to see if we need to perform an update.
+ * Check to see if the configuration file has changed since the last time we checked.
+ *
+ * @param type The value to be passed to avr_set_timer: with 0 when the
+ * config file has to be read, 1 when the status has to be re-validated, and
+ * 2 when there was a large clock drift.
+ *
  */
 static int check_timer(int type)
 {
