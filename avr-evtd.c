@@ -513,8 +513,7 @@ static void avr_evtd_main(void)
 			case 0x33: /* '3' */
 				break;
 			default:
-				if (buf[0] != 0)
-					syslog(LOG_INFO, "unknown message %X[%d]", buf[0], res);
+				syslog(LOG_INFO, "unknown message %X[%d]", buf[0], res);
 				break;
 			}
 
