@@ -134,8 +134,8 @@ static void avr_evtd_main(void);
 static char check_disk(void);
 static void set_avr_timer(int type);
 static void parse_avr(char *buff);
-static void GetTime(long timeNow, event * pTimerLocate, long *time, long defaultTime);
-static int FindNextToday(long timeNow, event * pTimer, long *time);
+static void GetTime(long timeNow, event *pTimerLocate, long *time, long defaultTime);
+static int FindNextToday(long timeNow, event *pTimer, long *time);
 static int FindNextDay(event * pTimer, long *time, long *offset);
 static void destroy_timer(event *e);
 static void write_to_uart(char);
@@ -254,16 +254,24 @@ static int open_serial(char *device)
 
 /**
  *
- * Close the serial port associated with @a serialfd. Additional action is
- * taken to send a command to the UART to make it stop the timer.
+ * Close the serial port associated with @a serialfd.
  *
+ * Before the closing of the file descriptor, a command is sent to the UART
+ * so that it will stop the watchdog timer. This is not necessary when
+ * powering off the machine, but *is* important when the system
+ * administrator has, for some reason, stopped the daemon for some kind of
+ * maintenance.
+ *
+ * FIXME: The memory used by the linked list of events is freed. This should
+ * probably be better to keep split in another function. Also, the file
+ * descriptor used for syslog is closed (optional, but nice).  Perhaps the
+ * function should just be renamed, instead of being split in many smaller
+ * functions?
  */
 static void close_serial(void)
 {
 	if (serialfd != 0) {
 		/* Stop the watchdog timer */
-		/* NOTE: the AVR does not really need to see this, just
-		 * which happens when it powers down anyway */
 #ifndef MIPS
 		write_to_uart(0x4B); /* 'K' */
 #endif
@@ -299,24 +307,25 @@ static void termination_handler(int signum)
 
 
 /**
- * Execute event script handler with the appropriate commands
+ * Execute event script handler (put in background in a shell) with the
+ * commands passed as parameters.
  *
- * @param cmd First part of the command to the event script. A single character.
+ * @param cmd1 First part of the command to the event script. A single character.
  * @param cmd2 Second part of the command to the event script. An integer.
  *
  */
-static void exec_cmd(char cmd, int cmd2)
+static void exec_cmd(char cmd1, int cmd2)
 {
 	char cmd_line[CMD_LINE_LENGTH];
 
 	sprintf(cmd_line, "/etc/avr-evtd/EventScript %c %s %d &",
-		cmd, avr_device, cmd2);
+		cmd1, avr_device, cmd2);
 	system(cmd_line);
 }
 
 
 /**
- * Abbreviated version of the executioner of the event script handler
+ * Abbreviated version of the executioner of the event script handler.
  *
  * @param cmd Command to be sent to the event script. It must consist of a
  * single character.
