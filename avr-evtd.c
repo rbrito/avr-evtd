@@ -93,7 +93,7 @@ static char avr_device[] = STD_DEVICE;
 event *off_timer = NULL;
 event *on_timer = NULL;
 int serialfd = 0;
-time_t LastMelcoAccess = 0;
+time_t last_conffile_access = 0;
 int TimerFlag = 0;
 long ShutdownTimer = 9999;	/* Careful here */
 char FirstTimeFlag = 1;
@@ -116,7 +116,7 @@ int checkState = 1;		/* Will force an update within 15
 char em_mode = 0;
 char rootdev[10] = "";		/* root filesystem device */
 char workdev[10] = "";		/* work filesystem device */
-int diskCheckNumber = 0;
+int diskcheck_number = 0;
 char keepAlive = 0x5B;		/* '[' */
 char reset_presses = 0;
 int diskUsed = 0;
@@ -134,8 +134,8 @@ static void avr_evtd_main(void);
 static char check_disk(void);
 static void set_avr_timer(int type);
 static void parse_avr(char *buff);
-static void GetTime(long timeNow, event *pTimerLocate, long *time, long defaultTime);
-static int FindNextToday(long timeNow, event *pTimer, long *time);
+static void GetTime(long now, event *pTimerLocate, long *time, long default_time);
+static int FindNextToday(long now, event *pTimer, long *time);
 static int FindNextDay(event * pTimer, long *time, long *offset);
 static void destroy_timer(event *e);
 static void write_to_uart(char);
@@ -515,8 +515,7 @@ static void avr_evtd_main(void)
 #ifdef DEBUG
 			default:
 				if (buf[0] != 0)
-					syslog(LOG_INFO, "unknown message %X[%d]",
-					       buf[0], res);
+					syslog(LOG_INFO, "unknown message %X[%d]", buf[0], res);
 				break;
 #endif
 			}
@@ -524,14 +523,11 @@ static void avr_evtd_main(void)
 			/* Get time for use later */
 			time(&idle);
 		} else {	/* Time-out event */
-			/* Check if button(s) are still held after
-			 * holdcyle seconds */
+			/* Check if button(s) are still held after holdcyle seconds */
 			if ((idle + hold_cycle) < time_now) {
 				/* Power down selected */
 				if (pushedpower == 1) {
-					/* Re-validate our time wake-up;
-					 * do not perform if in extra
-					 * time */
+					/* Re-validate our time wake-up; do not perform if in extra time */
 					if (!extraTime)
 						set_avr_timer(1);
 
@@ -543,8 +539,7 @@ static void avr_evtd_main(void)
 
 			}
 #ifndef UBOOT
-			/* Has user held the reset button long enough to
-			 * request EM-Mode? */
+			/* Has user held the reset button long enough to request EM-Mode? */
 			if ((idle + EM_MODE_TIME) < time_now) {
 				if (pushedreset == 1 && em_mode) {
 					/* Send EM-Mode request to
@@ -576,16 +571,13 @@ static void avr_evtd_main(void)
 						if (refresh_rate + 60 > abs(time_diff)) {
 							ShutdownTimer -= time_diff;
 
-							/* Within five
-							 * minutes of
-							 * shutdown? */
+							/* Within five minutes of shutdown? */
 							if (ShutdownTimer < FIVE_MINUTES) {
 								if (FirstTimeFlag) {
 									FirstTimeFlag = 0;
 
 									/* Inform the EventScript */
-									exec_cmd(FIVE_SHUTDOWN,
-									     ShutdownTimer);
+									exec_cmd(FIVE_SHUTDOWN, ShutdownTimer);
 
 									/* Re-validate out time
 									   wake-up; do not perform
@@ -755,7 +747,7 @@ static char check_disk(void)
 	char buff[4096];
 
 	/* First time then determine paths */
-	if (FirstTime < diskCheckNumber) {
+	if (FirstTime < diskcheck_number) {
 		FirstTime = 0;
 		/* Get list of mounted devices */
 		file = open("/etc/mtab", O_RDONLY);
@@ -800,10 +792,10 @@ static char check_disk(void)
 
 	/* Only perform these tests if DISKCHECK is enabled and
 	 * partition's havev been defined */
-	if (check_pct > 0 && diskCheckNumber > 0) {
+	if (check_pct > 0 && diskcheck_number > 0) {
 		errno = -1;
 		/* Ensure root and/or working paths have been located */
-		if (diskCheckNumber == FirstTime) {
+		if (diskcheck_number == FirstTime) {
 			/* check root partition */
 			if (strlen(root_mountpt) > 0) {
 				errno = statfs(root_mountpt, &mountfs);
@@ -873,8 +865,8 @@ static void parse_avr(char *buff)
 	int cmd;
 	int hour;
 	int minutes;
-	int iGroup = 0;
-	int ilastGroup = 0;
+	int group = 0;
+	int last_group = 0;
 	int first_day = -1;
 	int process_day = -1;
 	event *pTimer;
@@ -897,7 +889,7 @@ static void parse_avr(char *buff)
 	TimerFlag = 0;
 	refresh_rate = 40;
 	hold_cycle = 3;
-	diskCheckNumber = 0;
+	diskcheck_number = 0;
 
 	/* To prevent looping */
 	for (i = 0; i < 200; i++) {
@@ -906,9 +898,9 @@ static void parse_avr(char *buff)
 		if (pos[0] != COMMENT_PREFIX) {
 			/* Could return groups, say MON-THR, need to
 			 * strip '-' out */
-			if ('-' == pos[3]) {
+			if (pos[3] == '-') {
 				*(last - 1) = '=';	/* Plug the '0' with token parameter  */
-				iGroup = 1;
+				group = 1;
 				last -= 8;
 				pos = strtok_r(NULL, "-", &last);
 			}
@@ -983,7 +975,7 @@ static void parse_avr(char *buff)
 				/* Valid macro'd OFF/ON entry? */
 				if (cmd == 2 || cmd == 4) {
 					/* Group macro so create the other events */
-					if (iGroup != 0) {
+					if (group != 0) {
 						j = first_day - 1;
 						/* Create the multiple
 						 * entries for each day
@@ -1053,13 +1045,13 @@ static void parse_avr(char *buff)
 			/* For groups, */
 			process_day = cmd - 8;
 			/* Remove grouping flag for next defintion */
-			ilastGroup += iGroup;
-			if (ilastGroup > 2) {
-				iGroup = 0;
-				ilastGroup = 0;
+			last_group += group;
+			if (last_group > 2) {
+				group = 0;
+				last_group = 0;
 			}
 
-			if (ilastGroup == 1)
+			if (last_group == 1)
 				first_day = process_day;
 
 			break;
@@ -1083,7 +1075,7 @@ static void parse_avr(char *buff)
 		case 17:
 		case 18:
 			if (strlen(pos) <= 5) {
-				diskCheckNumber++;
+				diskcheck_number++;
 				if (cmd == 17)
 					sprintf(rootdev, "/dev/%s", pos);
 				else
@@ -1185,13 +1177,13 @@ static void GetTime(long timeNow, event *pTimerLocate, long *time, long defaultT
 
 		/* Failed to find a time for today, look for the next
 		 * power-up time */
-		if (0 == onLocated) {
+		if (!onLocated) {
 			pTimer = pTimerLocate;
 			onLocated = FindNextDay(pTimer, time, &lOffset);
 		}
 
 		/* Nothing for week-end, look at start */
-		if (0 == onLocated) {
+		if (!onLocated) {
 			*time = pTimerLocate->time;
 			lOffset = ((6 - last_day) + pTimerLocate->day) * TWENTYFOURHR;
 		}
@@ -1258,10 +1250,8 @@ static void set_avr_timer(int type)
 
 		/* Correct to AVR oscillator */
 		if (onTime < current_time) {
-			wait_time =
-			    (TWELVEHR + (onTime - (current_time - TWELVEHR))) * 60;
-			onTime =
-			    ((TWELVEHR + (onTime - (current_time - TWELVEHR))) * 100) / 112;
+			wait_time = (TWELVEHR + (onTime - (current_time - TWELVEHR))) * 60;
+			onTime = ((TWELVEHR + (onTime - (current_time - TWELVEHR))) * 100) / 112;
 		} else {
 			if (onTime < (offTime - TWENTYFOURHR))
 				onTime += TWENTYFOURHR;
@@ -1339,7 +1329,7 @@ static int check_timer(int type)
 
 		if (stat(CONFIG_FILE_LOCATION, &filestatus) == 0) {
 			/* Has this file changed? */
-			if (filestatus.st_mtime != LastMelcoAccess) {
+			if (filestatus.st_mtime != last_conffile_access) {
 				file = open(CONFIG_FILE_LOCATION, O_RDONLY);
 
 				if (file) {
@@ -1360,7 +1350,7 @@ static int check_timer(int type)
 				CommandLineUpdate = 1;
 
 			/* Update our lasttimes timer file access */
-			LastMelcoAccess = filestatus.st_mtime;
+			last_conffile_access = filestatus.st_mtime;
 		} else {
 			/* The file could not be stat'ed */
 		}
