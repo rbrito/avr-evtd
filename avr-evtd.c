@@ -718,107 +718,6 @@ static void avr_evtd_main(void)
 }
 
 
-int main(int argc, char *argv[])
-{
-
-	if (argc == 1) {
-		usage();
-		exit(1);
-	}
-
-	--argc;
-	++argv;
-
-	/* Parse any options */
-	while (argc >= 1 && '-' == (*argv)[0]) {
-		switch ((*argv)[1]) {
-#ifndef MIPS
-		case 'd':
-			--argc;
-			++argv;
-			if (argc >= 1) {
-				sprintf(avr_device, "%s", *argv);
-			} else {
-				printf("Option -d requires an argument.\n\n");
-				usage();
-				exit(1);
-			}
-			break;
-		case 'i':
-			debug = 2;
-			break;
-#endif
-		case 'c':
-			debug = 1;
-			break;
-		case 'v':
-			printf(VERSION);
-			exit(0);
-#ifndef	UBOOT
-		case 'e':
-			em_mode = 1;
-			break;
-#endif
-		case 'h':
-			usage();
-			exit(0);
-		default:
-			printf("Option unknown: %s.\n\n", *argv);
-			usage();
-			exit(1);
-		}
-		--argc;
-		++argv;
-	}
-
-	if (!debug) {
-		/* Run in background? */
-		if (daemon(0, 0) != 0) {
-			exit(-1);
-		}
-	} else if (debug == 1)
-		check_timer(0);
-
-	/* ignore tty signals */
-	signal(SIGTSTP, SIG_IGN);
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGCHLD, SIG_IGN);
-
-	/* Set up termination handlers */
-	signal(SIGTERM, termination_handler);
-	signal(SIGCONT, termination_handler);
-	signal(SIGINT, termination_handler);
-
-	/* Specified port? */
-	if (open_serial(avr_device)) {
-		exit(-3);
-	}
-
-#ifndef MIPS
-	if (debug > 1) {
-		close(serialfd);
-		exit(0);
-	}
-#endif
-
-	/* make child session leader */
-	setsid();
-
-	/* clear file creation mask */
-	umask(0);
-
-	/* Open logger for this daemon */
-	openlog("avr-daemon", LOG_PID | LOG_NOWAIT | LOG_CONS, LOG_WARNING);
-
-	syslog(LOG_INFO, "%s", VERSION);
-
-	/* Our main */
-	avr_evtd_main();
-
-	return 0;
-}
-
-
 /**
  * Report errors. This function sends an error command to the UART.
  *
@@ -1476,4 +1375,105 @@ static int check_timer(int type)
 	}
 
 	return retcode;
+}
+
+
+int main(int argc, char *argv[])
+{
+
+	if (argc == 1) {
+		usage();
+		exit(1);
+	}
+
+	--argc;
+	++argv;
+
+	/* Parse any options */
+	while (argc >= 1 && '-' == (*argv)[0]) {
+		switch ((*argv)[1]) {
+#ifndef MIPS
+		case 'd':
+			--argc;
+			++argv;
+			if (argc >= 1) {
+				sprintf(avr_device, "%s", *argv);
+			} else {
+				printf("Option -d requires an argument.\n\n");
+				usage();
+				exit(1);
+			}
+			break;
+		case 'i':
+			debug = 2;
+			break;
+#endif
+		case 'c':
+			debug = 1;
+			break;
+		case 'v':
+			printf(VERSION);
+			exit(0);
+#ifndef	UBOOT
+		case 'e':
+			em_mode = 1;
+			break;
+#endif
+		case 'h':
+			usage();
+			exit(0);
+		default:
+			printf("Option unknown: %s.\n\n", *argv);
+			usage();
+			exit(1);
+		}
+		--argc;
+		++argv;
+	}
+
+	if (!debug) {
+		/* Run in background? */
+		if (daemon(0, 0) != 0) {
+			exit(-1);
+		}
+	} else if (debug == 1)
+		check_timer(0);
+
+	/* ignore tty signals */
+	signal(SIGTSTP, SIG_IGN);
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGCHLD, SIG_IGN);
+
+	/* Set up termination handlers */
+	signal(SIGTERM, termination_handler);
+	signal(SIGCONT, termination_handler);
+	signal(SIGINT, termination_handler);
+
+	/* Specified port? */
+	if (open_serial(avr_device)) {
+		exit(-3);
+	}
+
+#ifndef MIPS
+	if (debug > 1) {
+		close(serialfd);
+		exit(0);
+	}
+#endif
+
+	/* make child session leader */
+	setsid();
+
+	/* clear file creation mask */
+	umask(0);
+
+	/* Open logger for this daemon */
+	openlog("avr-daemon", LOG_PID | LOG_NOWAIT | LOG_CONS, LOG_WARNING);
+
+	syslog(LOG_INFO, "%s", VERSION);
+
+	/* Our main */
+	avr_evtd_main();
+
+	return 0;
 }
