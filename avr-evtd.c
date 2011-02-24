@@ -212,7 +212,7 @@ static int open_serial(char *device)
 
 #ifndef MIPS
 	/* Requested device memory address? */
-	if (2 == debug) {
+	if (debug == 2) {
 		struct serial_struct serinfo;
 		ioctl(serialfd, TIOCGSERIAL, &serinfo);
 		if (serinfo.iomem_base)
@@ -391,7 +391,7 @@ static void avr_evtd_main(void)
 			/* Ensure we shutdown on the nail if the timer
 			 * is enabled will be off slightly as timer
 			 * reads are different */
-			if (1 == TimerFlag) {
+			if (TimerFlag == 1) {
 				if (ShutdownTimer < res)
 					res = ShutdownTimer;
 			}
@@ -424,13 +424,13 @@ static void avr_evtd_main(void)
 			switch (buf[0]) {
 				/* power button release */
 			case 0x20: /* ' ' */
-				if (0 == PressedPowerFlag) {
+				if (PressedPowerFlag == 0) {
 					cmd = POWER_RELEASE;
 
 					if ((time_now - power_press) <= HOLD_TIME && FirstTimeFlag < 2) {
 						cmd = USER_RESET;
 					} else if (ShutdownTimer < FIVE_MINUTES || FirstTimeFlag > 1) {
-						if (0 == FirstTimeFlag)
+						if (FirstTimeFlag == 0)
 							FirstTimeFlag = 10;
 
 						ShutdownTimer += FIVE_MINUTES;
@@ -455,7 +455,7 @@ static void avr_evtd_main(void)
 
 				/* reset button release */
 			case 0x22: /* '"' */
-				if (0 == PressedResetFlag) {
+				if (PressedResetFlag == 0) {
 					cmd = RESET_RELEASE;
 					res = 0;
 
@@ -529,7 +529,7 @@ static void avr_evtd_main(void)
 			 * holdcyle seconds */
 			if ((idle + hold_cycle) < time_now) {
 				/* Power down selected */
-				if (1 == pushedpower) {
+				if (pushedpower == 1) {
 					/* Re-validate our time wake-up;
 					 * do not perform if in extra
 					 * time */
@@ -547,7 +547,7 @@ static void avr_evtd_main(void)
 			/* Has user held the reset button long enough to
 			 * request EM-Mode? */
 			if ((idle + EM_MODE_TIME) < time_now) {
-				if (1 == pushedreset && em_mode) {
+				if (pushedreset == 1 && em_mode) {
 					/* Send EM-Mode request to
 					 * script.  The script handles
 					 * the flash device decoding and
@@ -567,7 +567,7 @@ static void avr_evtd_main(void)
 			/* Skip this processing during power/reset scan */
 			if (!pushedreset && !pushedpower && FirstTimeFlag < 2) {
 				/* shutdown timer event? */
-				if (1 == TimerFlag) {
+				if (TimerFlag == 1) {
 					/* Decrement our powerdown timer */
 					if (ShutdownTimer > 0) {
 						time_diff = (time_now - last_shutdown_ping);
@@ -769,7 +769,7 @@ int main(int argc, char *argv[])
 		if (daemon(0, 0) != 0) {
 			exit(-1);
 		}
-	} else if (1 == debug)
+	} else if (debug == 1)
 		check_timer(0);
 
 	/* ignore tty signals */
@@ -1075,7 +1075,7 @@ static void parse_avr(char *buff)
 			else if ((hour >= 0 && hour <= 24)
 				 && (minutes >= 0 && minutes <= 59)) {
 				/* Valid macro'd OFF/ON entry? */
-				if (2 == cmd || 4 == cmd) {
+				if (cmd == 2 || cmd == 4) {
 					/* Group macro so create the other events */
 					if (iGroup != 0) {
 						j = first_day - 1;
@@ -1100,9 +1100,9 @@ static void parse_avr(char *buff)
 				}
 
 				/* Now handle the defaults */
-				else if (1 == cmd)
+				else if (cmd == 1)
 					OffTime = (hour * 60) + minutes;
-				else if (3 == cmd)
+				else if (cmd == 3)
 					OnTime = (hour * 60) + minutes;
 			} else
 				TimerFlag = -1;
@@ -1153,8 +1153,8 @@ static void parse_avr(char *buff)
 				ilastGroup = 0;
 			}
 
-			if (1 == ilastGroup)
-				iFirstDay = iProcessDay;
+			if (ilastGroup == 1)
+				first_day = process_day;
 
 			break;
 
@@ -1178,7 +1178,7 @@ static void parse_avr(char *buff)
 		case 18:
 			if (strlen(pos) <= 5) {
 				diskCheckNumber++;
-				if (17 == cmd)
+				if (cmd == 17)
 					sprintf(rootdev, "/dev/%s", pos);
 				else
 					sprintf(workdev, "/dev/%s", pos);
@@ -1427,7 +1427,7 @@ static int check_timer(int type)
 	struct stat filestatus;
 
 	/* Time from avr-evtd configuration file */
-	if (1 == CommandLineUpdate) {
+	if (CommandLineUpdate == 1) {
 		/* File is missing so default to off and do not do this
 		 * again */
 		CommandLineUpdate = 2;
@@ -1463,7 +1463,7 @@ static int check_timer(int type)
 
 	/* Ensure that if we have any configuration errors we at least
 	 * set timer off */
-	if (2 == CommandLineUpdate) {
+	if (CommandLineUpdate == 2) {
 		CommandLineUpdate = 3;
 		set_avr_timer(type);
 		report_error(1);
