@@ -160,7 +160,7 @@ static void usage(void)
  * @param lower Integer specifying the lowest accepted value.
  * @param upper Integer specifying the highest accepted value.
  */
-static inline void ensure_limits(int* value, int lower, int upper)
+static inline void ensure_limits(int *value, int lower, int upper)
 {
 	if (*value < lower) *value = lower;
 	if (*value > upper) *value = upper;
@@ -229,17 +229,16 @@ static int open_serial(char *device, char probe)
 	ioctl(serialfd, TCFLSH, 2);
 
 	/* Initialise the AVR device: clear memory and reset the timer */
-	write_to_uart(0x41); /* 'A' */
-	write_to_uart(0x46); /* 'F' */
-	write_to_uart(0x4A); /* 'J' */
-	write_to_uart(0x3E); /* '>' */
+	write_to_uart(0x41);	/* 'A' */
+	write_to_uart(0x46);	/* 'F' */
+	write_to_uart(0x4A);	/* 'J' */
+	write_to_uart(0x3E);	/* '>' */
 
 	/* Remove flashing DISK LED */
-	write_to_uart(0x58); /* 'X' */
+	write_to_uart(0x58);	/* 'X' */
 
 	return 0;
 }
-
 
 /**
  *
@@ -261,7 +260,7 @@ static void close_serial(void)
 {
 	if (serialfd != 0) {
 		/* Stop the watchdog timer */
-		write_to_uart(0x4B); /* 'K' */
+		write_to_uart(0x4B);	/* 'K' */
 		close(serialfd);
 	}
 
@@ -393,8 +392,7 @@ static void avr_evtd_main(void)
 		FD_SET(serialfd, &fReadFS);
 
 		/* Wait for AVR message or time-out? */
-		res = select(serialfd + 1, &fReadFS, NULL, NULL,
-				 &timeout_poll);
+		res = select(serialfd + 1, &fReadFS, NULL, NULL, &timeout_poll);
 
 		time_now = time(NULL);
 
@@ -407,7 +405,7 @@ static void avr_evtd_main(void)
 
 			switch (buf[0]) {
 				/* power button release */
-			case 0x20: /* ' ' */
+			case 0x20:	/* ' ' */
 				if (PressedPowerFlag == 0) {
 					cmd = POWER_RELEASE;
 
@@ -430,7 +428,7 @@ static void avr_evtd_main(void)
 				break;
 
 				/* power button push */
-			case 0x21: /* '!' */
+			case 0x21:	/* '!' */
 				exec_simple_cmd(POWER_PRESS);
 
 				PressedPowerFlag = 0;
@@ -438,7 +436,7 @@ static void avr_evtd_main(void)
 				break;
 
 				/* reset button release */
-			case 0x22: /* '"' */
+			case 0x22:	/* '"' */
 				if (PressedResetFlag == 0) {
 					cmd = RESET_RELEASE;
 					res = 0;
@@ -458,7 +456,7 @@ static void avr_evtd_main(void)
 				break;
 
 				/* reset button push */
-			case 0x23: /* '#' */
+			case 0x23:	/* '#' */
 				exec_simple_cmd(RESET_PRESS);
 
 				PressedResetFlag = 0;
@@ -466,13 +464,13 @@ static void avr_evtd_main(void)
 				break;
 
 				/* Fan on high speed */
-			case 0x24: /* '$' */
+			case 0x24:	/* '$' */
 				fan_fault = 6;
 				fault_time = time_now;
 				break;
 
 				/* Fan fault */
-			case 0x25: /* '%' */
+			case 0x25:	/* '%' */
 				/* Flag the EventScript */
 				exec_cmd(FAN_FAULT, fan_fault);
 
@@ -485,17 +483,17 @@ static void avr_evtd_main(void)
 				break;
 
 				/* Acknowledge */
-			case 0x30: /* '0' */
+			case 0x30:	/* '0' */
 				break;
 
 				/* AVR halt requested */
-			case 0x31: /* '1' */
+			case 0x31:	/* '1' */
 				close_serial();
 				exec_simple_cmd(AVR_HALT);
 				break;
 
 				/* AVR initialisation complete */
-			case 0x33: /* '3' */
+			case 0x33:	/* '3' */
 				break;
 			default:
 				syslog(LOG_INFO, "unknown message %X[%d]", buf[0], res);
@@ -580,7 +578,7 @@ static void avr_evtd_main(void)
 					} else {
 						/* Prevent re-entry and
 						 * execute command */
-						pushedpower =  PressedResetFlag = 2;
+						pushedpower = PressedResetFlag = 2;
 						exec_simple_cmd(TIMED_SHUTDOWN);
 					}
 				}
@@ -623,7 +621,7 @@ static void avr_evtd_main(void)
 					/* Only update DISK LED on disk full change */
 					if (disk_full != currentStatus) {
 						/* LED status */
-						cmd = 0x56;  /* 'V' */
+						cmd = 0x56;	/* 'V' */
 						if (currentStatus)
 							cmd++;
 						else {
@@ -671,7 +669,7 @@ static void avr_evtd_main(void)
 			case 6:
 				/* Attempt to slow fan down again after 5 minutes */
 				if ((fault_time + FIVE_MINUTES) < time_now) {
-					write_to_uart(0x5C);  /* '\\' */
+					write_to_uart(0x5C);	/* '\\' */
 					fan_fault = 1;
 				}
 
@@ -717,15 +715,15 @@ static char check_disk(void)
 	static char root_mountpt[16];
 	static char work_mountpt[16];
 	struct statfs mountfs;
-	int pct_root = 0; /* percentage of the root fs that is used */
-	int pct_work = 0; /* percentage of the work fs that is used */
+	int pct_root = 0;	/* percentage of the root fs that is used */
+	int pct_work = 0;	/* percentage of the work fs that is used */
 	char cmd;
 	char *pos;
 	int file;
 	int i;
 	char buff[4096];
 
-	if (FirstTime < diskcheck_number) { /* first, determine paths from mtab */
+	if (FirstTime < diskcheck_number) {	/* first, determine paths from mtab */
 		FirstTime = 0;
 
 		if ((file = open("/etc/mtab", O_RDONLY)) < 0)
@@ -1227,15 +1225,14 @@ static void set_avr_timer(int type)
 		decode_time = localtime(&ttime);
 
 		syslog(LOG_INFO, "%s-%02d/%02d %02d:%02d (Following timer %s)",
-			message, decode_time->tm_mon + 1,
-			decode_time->tm_mday, decode_time->tm_hour,
-			decode_time->tm_min, msg_kind[type]);
+		       message, decode_time->tm_mon + 1, decode_time->tm_mday,
+		       decode_time->tm_hour, decode_time->tm_min, msg_kind[type]);
 
 		/* Now tell the AVR we are updating the 'on' time */
-		write_to_uart(0x3E); /* '>' */
-		write_to_uart(0x3C); /* '<' */
-		write_to_uart(0x3A); /* ':' */
-		write_to_uart(0x38); /* '8' */
+		write_to_uart(0x3E);	/* '>' */
+		write_to_uart(0x3C);	/* '<' */
+		write_to_uart(0x3A);	/* ':' */
+		write_to_uart(0x38);	/* '8' */
 
 		/* Bit pattern (12-bits) detailing time to wake */
 		for (i = 0; i < 12; i++) {
@@ -1247,11 +1244,11 @@ static void set_avr_timer(int type)
 		}
 
 		/* Complete output and set LED state (power) to pulse */
-		write_to_uart(0x3F); /* '?' */
-		keepAlive = 0x5B; /* '[' */
-	} else { 	/* Inform AVR its not in timer mode */
-		write_to_uart(0x3E); /* '>' */
-		keepAlive = 0x5A; /* 'Z' */
+		write_to_uart(0x3F);	/* '?' */
+		keepAlive = 0x5B;	/* '[' */
+	} else {		/* Inform AVR its not in timer mode */
+		write_to_uart(0x3E);	/* '>' */
+		keepAlive = 0x5A;	/* 'Z' */
 	}
 
 	write_to_uart(keepAlive);
@@ -1286,7 +1283,7 @@ static int check_timer(int type)
 				file = open(CONFIG_FILE_LOCATION, O_RDONLY);
 
 				if (file) {
-					res = read(file, buff, sizeof(buff)-1);
+					res = read(file, buff, sizeof(buff) - 1);
 
 					/* Dump the file pointer for others */
 					close(file);
@@ -1320,11 +1317,10 @@ static int check_timer(int type)
 	return retcode;
 }
 
-
 int main(int argc, char *argv[])
 {
-	int probe = 0; /* mode in which we open the serial port */
-	int debug = 0; /* determine if we are in debug mode or not */
+	int probe = 0;		/* mode in which we open the serial port */
+	int debug = 0;		/* determine if we are in debug mode or not */
 
 	if (argc == 1) {
 		usage();
@@ -1373,7 +1369,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (!debug) {
-		if (daemon(0, 0) != 0) /* fork to background */
+		if (daemon(0, 0) != 0)	/* fork to background */
 			exit(-1);
 	} else
 		check_timer(0);
