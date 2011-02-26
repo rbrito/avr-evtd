@@ -131,13 +131,15 @@ required from the machine name.
 
 # KNOW ISSUES
 
-None known.  Tested now on PPC, MIPS and KURO systems with 2.4 and 2.6
-releases of the kernel.  Also tested under stock, openlink and freelink
-versions of the updated firmware.
+None known, but there are probably issues with the code, as it has survived
+changes in the maintenance.
+
+It has been tested on Kuroboxes with PowerPC processors, Linux 2.6, and
+Debian as the distribution. Reports of bugs are welcome.
 
 ----
 
-# This is Free Software for Linkstation/kuro fans and lovers!
+# This is Free Software for Linkstation/Kuro fans and lovers!
 
 Please just mention our name if modified or linked to.
 Bob Perry (UK)		June 2006.
