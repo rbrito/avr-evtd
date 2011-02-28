@@ -83,11 +83,11 @@ typedef struct event event;
 
 static char avr_device[] = "/dev/ttyS1";
 
-event *off_timer = NULL;
-event *on_timer = NULL;
-int serialfd = 0;
-time_t last_conffile_access = 0;
-int TimerFlag = 0;
+event *off_timer;
+event *on_timer;
+int serialfd;
+time_t last_conffile_access;
+int TimerFlag;
 long ShutdownTimer = 9999;	/* Careful here */
 char FirstTimeFlag = 1;
 char FirstWarning = 1;
@@ -106,8 +106,8 @@ int checkState = 1;		/* Will force an update within 15
 				 * seconds of starting up to resolve
 				 * those pushed out refresh times */
 char em_mode = 0;
-char rootdev[10] = "";		/* root filesystem device */
-char workdev[10] = "";		/* work filesystem device */
+char rootdev[10];		/* root filesystem device */
+char workdev[10];		/* work filesystem device */
 int diskcheck_number = 0;
 char keepAlive = 0x5B;		/* '[' */
 char reset_presses = 0;
