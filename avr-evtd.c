@@ -337,7 +337,7 @@ static void avr_evtd_main(void)
 	time_t fault_time;
 	time_t last_shutdown_ping;
 	time_t time_now;
-	fd_set fReadFS;
+	fd_set serialfd_set;
 	struct timeval timeout_poll;
 	int res;
 	int fan_fault = 0;
@@ -387,11 +387,11 @@ static void avr_evtd_main(void)
 
 		timeout_poll.tv_sec = res;
 
-		FD_ZERO(&fReadFS);
-		FD_SET(serialfd, &fReadFS);
+		FD_ZERO(&serialfd_set);
+		FD_SET(serialfd, &serialfd_set);
 
 		/* Wait for AVR message or time-out? */
-		res = select(serialfd + 1, &fReadFS, NULL, NULL, &timeout_poll);
+		res = select(serialfd + 1, &serialfd_set, NULL, NULL, &timeout_poll);
 
 		time_now = time(NULL);
 
