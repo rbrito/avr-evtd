@@ -14,20 +14,13 @@ TITLE=Linkstation AVR Event daemon
 #
 CC = cc
 CFLAGS = -Wall -Wextra -Os
-CFLAGS += -DUBOOT
 
 ######################################################################
 # Almost no user should need to change the contents below
 ######################################################################
-# We have the option to build the daemon for PPC or MIPS
 
 ifeq (, $(PREFIX))
 	 PREFIX := usr/local
-endif
-
-MACHINE = $(shell uname -m)
-ifeq (${MACHINE}, mips)
-	CFLAGS += -DMIPS
 endif
 
 # Main targets
