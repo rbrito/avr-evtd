@@ -75,13 +75,12 @@
 /* Macro event object definition */
 struct event {
 	int day;		/* Event day */
-	long time;		/* Event time (24hr) */
+	long time;		/* Event time (24h) */
 	struct event *next;	/* Pointer to next event */
 };
 
 typedef struct event event;
 
-/* Variables and macros that depend on the architecture */
 static char avr_device[] = "/dev/ttyS1";
 
 event *off_timer = NULL;
