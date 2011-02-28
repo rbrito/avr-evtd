@@ -38,11 +38,13 @@ avr-evtd: avr-evtd.c
 
 clean:
 	rm -f avr-evtd *~ *.o
-	rm -f /etc/init.d/avr-evtd
-	rm -f /etc/default/avr-evtd.sample
-	rm -f /etc/avr_evtd/EventScript
-	rm -f /usr/local/sbin/avr-evtd
-	rm -f /usr/local/man/man8/avr-evtd.8
+	@if [ $(shell id -u) = 0 ]; then \
+	rm -f /etc/init.d/avr-evtd; \
+	rm -f /etc/default/avr-evtd.sample; \
+	rm -f /etc/avr_evtd/EventScript; \
+	rm -f /usr/local/sbin/avr-evtd; \
+	rm -f /usr/local/man/man8/avr-evtd.8; \
+	fi
 
 install: avr-evtd
 	# ENSURE DAEMON IS STOPPED
