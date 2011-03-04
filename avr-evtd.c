@@ -86,7 +86,7 @@ static char avr_device[] = "/dev/ttyS1";
 event *off_timer;
 event *on_timer;
 int serialfd;
-time_t last_conffile_access;
+time_t last_config_mtime;
 int TimerFlag;
 long ShutdownTimer = 9999;	/* Careful here */
 char FirstTimeFlag = 1;
@@ -96,7 +96,7 @@ long OnTime = -1;		/* Default, NO defaults */
 
 char CommandLineUpdate = 1;
 
-int check_pct = 90;
+int max_pct = 90;
 int last_day;
 int refresh_rate = 40;
 int hold_cycle = 3;
@@ -115,7 +115,7 @@ int pct_used;
 
 /* Function declarations */
 static void usage(void);
-static int check_timer(int type);
+static void check_timer(int type);
 static void termination_handler(int signum);
 static int open_serial(char *device, char probe);
 
@@ -125,7 +125,7 @@ static void close_serial(void);
 static void avr_evtd_main(void);
 static char check_disk(void);
 static void set_avr_timer(int type);
-static void parse_avr(char *buff);
+static void parse_config(char *content);
 static void GetTime(long now, event *pTimerLocate, long *time, long default_time);
 static int FindNextToday(long now, event *pTimer, long *time);
 static int FindNextDay(event * pTimer, long *time, long *offset);
@@ -613,7 +613,7 @@ static void avr_evtd_main(void)
 						/* Execute some user code on disk full */
 						if (FirstWarning) {
 							FirstWarning = pesterMessage;
-							exec_cmd(DISK_FULL, diskUsed);
+							exec_cmd(DISK_FULL, pct_used);
 						}
 					}
 
@@ -761,7 +761,7 @@ static char check_disk(void)
 
 	/* Only test when DISKCHECK is enabled and partitions are defined */
 	/* FIXME: Is this kind of test correct for any kind of filesystem? */
-	if (check_pct > 0 && diskcheck_number > 0) {
+	if (max_pct > 0 && diskcheck_number > 0) {
 		if (diskcheck_number == FirstTime) {
 			if (strlen(root_mountpt) > 0) {
 				if (statfs(root_mountpt, &mountfs) == -1)
@@ -777,8 +777,8 @@ static char check_disk(void)
 		}
 	}
 
-	diskUsed = (pct_root > pct_work) ? pct_root : pct_work;
-	return (diskUsed > check_pct);
+	pct_used = (pct_root > pct_work) ? pct_root : pct_work;
+	return (pct_used > max_pct);
 
 err_not_avail:
 	write_to_uart(0x59); /* 'Y' */
@@ -789,10 +789,10 @@ err_not_avail:
 /**
  * Parse configuration file.
  *
- * @param buff A buffer containing the contents of the configuration file
+ * @param content A string with the contents of the config file
  * (usually, /etc/default/avr-evtd).
  */
-static void parse_avr(char *buff)
+static void parse_config(char *content)
 {
 	const char *command[] = {
 		"TIMER",
@@ -810,6 +810,8 @@ static void parse_avr(char *buff)
 		"WORK"
 	};
 
+#define NCOMMANDS		(int) (sizeof(command)/sizeof(const char*))
+
 	char *pos;
 	char *last;		/* Used by strtok_r to point to current token */
 	int i, j;
@@ -825,7 +827,7 @@ static void parse_avr(char *buff)
 	event *pOn;
 
 	/* Parse our time requests */
-	pos = strtok_r(buff, ",=\n", &last);
+	pos = strtok_r(content, ",=\n", &last);
 
 	/* Destroy the macro timer objects, if any */
 	destroy_timer(off_timer);
@@ -857,7 +859,7 @@ static void parse_avr(char *buff)
 			}
 
 			/* Locate our expected commands */
-			for (cmd = 0; cmd < 19; cmd++)
+			for (cmd = 0; cmd < NCOMMANDS; cmd++)
 				if (strcasecmp(pos, command[cmd]) == 0)
 					break;
 
@@ -966,9 +968,9 @@ static void parse_avr(char *buff)
 
 			/* Disk check percentage? */
 		case 5:
-			if (!sscanf(pos, "%d", &check_pct))
-				check_pct = -1;
-			ensure_limits(&check_pct, -1, 100);
+			if (!sscanf(pos, "%d", &max_pct))
+				max_pct = -1;
+			ensure_limits(&max_pct, -1, 100);
 			break;
 
 			/* Refresh/re-scan time? */
@@ -1262,10 +1264,8 @@ static void set_avr_timer(int type)
  * 2 when there was a large clock drift.
  *
  */
-static int check_timer(int type)
+static void check_timer(int type)
 {
-	int retcode = 1;
-	int res;
 	char buff[4096];
 	int file;
 	struct stat filestatus;
@@ -1276,29 +1276,21 @@ static int check_timer(int type)
 		CommandLineUpdate = 2;
 
 		if (stat(CONFIG_FILE_LOCATION, &filestatus) == 0) {
-			/* Has this file changed? */
-			if (filestatus.st_mtime != last_conffile_access) {
+			if (filestatus.st_mtime != last_config_mtime) {
 				file = open(CONFIG_FILE_LOCATION, O_RDONLY);
 
 				if (file) {
-					res = read(file, buff, sizeof(buff) - 1);
-
-					/* Dump the file pointer for others */
-					close(file);
-
-					if (res > 0) {
-						/* Return flag */
-						retcode = 0;
+					if (read(file, buff, sizeof(buff) - 1) > 0) {
 						CommandLineUpdate = 1;
-						parse_avr(buff);
+						parse_config(buff);
 						set_avr_timer(type);
 					}
+					close(file);
 				}
 			} else
 				CommandLineUpdate = 1;
 
-			/* Update our lasttimes timer file access */
-			last_conffile_access = filestatus.st_mtime;
+			last_config_mtime = filestatus.st_mtime;
 		} else {
 			/* The file could not be stat'ed */
 		}
@@ -1311,7 +1303,6 @@ static int check_timer(int type)
 		report_error(1);
 	}
 
-	return retcode;
 }
 
 
