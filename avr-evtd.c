@@ -100,18 +100,18 @@ int check_pct = 90;
 int last_day;
 int refresh_rate = 40;
 int hold_cycle = 3;
-char pesterMessage = 0;
+char pesterMessage;
 int fanFaultSeize = 30;
 int checkState = 1;		/* Will force an update within 15
 				 * seconds of starting up to resolve
 				 * those pushed out refresh times */
-char em_mode = 0;
+char em_mode;
 char rootdev[10];		/* root filesystem device */
 char workdev[10];		/* work filesystem device */
-int diskcheck_number = 0;
+int diskcheck_number;
 char keepAlive = 0x5B;		/* '[' */
-char reset_presses = 0;
-int diskUsed = 0;
+char reset_presses;
+int pct_used;
 
 /* Function declarations */
 static void usage(void);
