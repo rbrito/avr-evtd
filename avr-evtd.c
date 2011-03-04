@@ -181,7 +181,7 @@ static void write_to_uart(char cmd)
 
 
 /**
- * Establish connection to serial port and initialise it.
+ * Establish connection to serial port.
  *
  * @param device A string containing the device to be used to communicate
  * with the UART.
@@ -521,9 +521,9 @@ static void avr_evtd_main(void)
 			/* Has user held the reset button long enough to request EM-Mode? */
 			if ((idle + EM_MODE_TIME) < time_now) {
 				if (pushedreset == 1 && em_mode) {
-					/* Send EM-Mode request to
-					 * script.  The script handles
-					 * the flash device decoding and
+					/* Send EM-Mode request to script.
+					 * The script handles the flash
+					 * device decoding and
 					 * writes the HDD no-good flag
 					 * NGNGNG into the flash status.
 					 * It then flags a reboot which
@@ -1272,8 +1272,7 @@ static int check_timer(int type)
 
 	/* Time from avr-evtd configuration file */
 	if (CommandLineUpdate == 1) {
-		/* File is missing so default to off and do not do this
-		 * again */
+		/* File is missing so default to off and do not do this again */
 		CommandLineUpdate = 2;
 
 		if (stat(CONFIG_FILE_LOCATION, &filestatus) == 0) {
@@ -1305,8 +1304,7 @@ static int check_timer(int type)
 		}
 	}
 
-	/* Ensure that if we have any configuration errors we at least
-	 * set timer off */
+	/* Ensure that if we have any configuration errors we at least set timer off */
 	if (CommandLineUpdate == 2) {
 		CommandLineUpdate = 3;
 		set_avr_timer(type);
@@ -1315,6 +1313,7 @@ static int check_timer(int type)
 
 	return retcode;
 }
+
 
 int main(int argc, char *argv[])
 {
