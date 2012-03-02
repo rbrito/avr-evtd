@@ -126,9 +126,9 @@ static void avr_evtd_main(void);
 static char check_disk(void);
 static void set_avr_timer(int type);
 static void parse_config(char *content);
-static void GetTime(long now, event *pTimerLocate, long *time, long default_time);
-static int FindNextToday(long now, event *pTimer, long *time);
-static int FindNextDay(event * pTimer, long *time, long *offset);
+static void get_time(long now, event *pTimerLocate, long *time, long default_time);
+static int find_next_today(long now, event *pTimer, long *time);
+static int find_next_day(event * pTimer, long *time, long *offset);
 static void destroy_timer(event *e);
 static void write_to_uart(char);
 static void report_error(int number);
@@ -327,11 +327,11 @@ static void avr_evtd_main(void)
 {
 	char buf[17];
 	char cmd;
-	char pushedpower = 0;
-	char pushedreset = 0;
-	char PressedPowerFlag = 0;
-	char PressedResetFlag = 0;
-	char currentStatus = 0;
+	char pushed_power = 0;
+	char pushed_reset = 0;
+	char pressed_power_flag = 0;
+	char pressed_reset_flag = 0;
+	char current_status = 0;
 	time_t idle = time(NULL);
 	time_t power_press = idle;
 	time_t fault_time;
@@ -362,7 +362,7 @@ static void avr_evtd_main(void)
 			/* Change our timer to check for a power/reset
 			 * request need a faster poll rate here to see
 			 * the double press event properly */
-			if (pushedpower || pushedreset || first_time_flag > 1) {
+			if (pushed_power || pushed_reset || first_time_flag > 1) {
 				timeout_poll.tv_usec = 250;
 				res = 0;
 				check_state = -2;
@@ -405,7 +405,7 @@ static void avr_evtd_main(void)
 			switch (buf[0]) {
 				/* power button release */
 			case 0x20:	/* ' ' */
-				if (PressedPowerFlag == 0) {
+				if (pressed_power_flag == 0) {
 					cmd = POWER_RELEASE;
 
 					if ((time_now - power_press) <= HOLD_TIME && first_time_flag < 2) {
@@ -423,20 +423,20 @@ static void avr_evtd_main(void)
 					power_press = time_now;
 				}
 
-				pushedpower = PressedPowerFlag = 0;
+				pushed_power = pressed_power_flag = 0;
 				break;
 
 				/* power button push */
 			case 0x21:	/* '!' */
 				exec_simple_cmd(POWER_PRESS);
 
-				PressedPowerFlag = 0;
-				pushedpower = 1;
+				pressed_power_flag = 0;
+				pushed_power = 1;
 				break;
 
 				/* reset button release */
 			case 0x22:	/* '"' */
-				if (PressedResetFlag == 0) {
+				if (pressed_reset_flag == 0) {
 					cmd = RESET_RELEASE;
 					res = 0;
 
@@ -451,15 +451,15 @@ static void avr_evtd_main(void)
 					power_press = time_now;
 				}
 
-				pushedreset = PressedResetFlag = 0;
+				pushed_reset = pressed_reset_flag = 0;
 				break;
 
 				/* reset button push */
 			case 0x23:	/* '#' */
 				exec_simple_cmd(RESET_PRESS);
 
-				PressedResetFlag = 0;
-				pushedreset = 1;
+				pressed_reset_flag = 0;
+				pushed_reset = 1;
 				break;
 
 				/* Fan on high speed */
@@ -505,22 +505,22 @@ static void avr_evtd_main(void)
 			/* Check if button(s) are still held after holdcyle seconds */
 			if ((idle + hold_cycle) < time_now) {
 				/* Power down selected */
-				if (pushedpower == 1) {
+				if (pushed_power == 1) {
 					/* Re-validate our time wake-up; do not perform if in extra time */
 					if (!extraTime)
 						set_avr_timer(1);
 
 					exec_simple_cmd(USER_POWER_DOWN);
 
-					pushedpower = 0;
-					PressedPowerFlag = 1;
+					pushed_power = 0;
+					pressed_power_flag = 1;
 				}
 
 			}
 
 			/* Has user held the reset button long enough to request EM-Mode? */
 			if ((idle + EM_MODE_TIME) < time_now) {
-				if (pushedreset == 1 && em_mode) {
+				if (pushed_reset == 1 && em_mode) {
 					/* Send EM-Mode request to script.
 					 * The script handles the flash
 					 * device decoding and
@@ -532,13 +532,13 @@ static void avr_evtd_main(void)
 					 * the HDD */
 					exec_simple_cmd(EM_MODE);
 
-					pushedreset = 0;
-					PressedResetFlag = 1;
+					pushed_reset = 0;
+					pressed_reset_flag = 1;
 				}
 			}
 
 			/* Skip this processing during power/reset scan */
-			if (!pushedreset && !pushedpower && first_time_flag < 2) {
+			if (!pushed_reset && !pushed_power && first_time_flag < 2) {
 				/* shutdown timer event? */
 				if (timer_flag == 1) {
 					/* Decrement our powerdown timer */
@@ -577,7 +577,7 @@ static void avr_evtd_main(void)
 					} else {
 						/* Prevent re-entry and
 						 * execute command */
-						pushedpower = PressedResetFlag = 2;
+						pushed_power = pressed_reset_flag = 2;
 						exec_simple_cmd(TIMED_SHUTDOWN);
 					}
 				}
@@ -609,7 +609,7 @@ static void avr_evtd_main(void)
 				case 2:
 					cmd = keep_alive;
 
-					if ((currentStatus = check_disk())) {
+					if ((current_status = check_disk())) {
 						/* Execute some user code on disk full */
 						if (first_warning) {
 							first_warning = pester_message;
@@ -618,17 +618,17 @@ static void avr_evtd_main(void)
 					}
 
 					/* Only update DISK LED on disk full change */
-					if (disk_full != currentStatus) {
+					if (disk_full != current_status) {
 						/* LED status */
 						cmd = 0x56;	/* 'V' */
-						if (currentStatus)
+						if (current_status)
 							cmd++;
 						else {
 							first_warning = 0;
 							exec_cmd(DISK_FULL, 0);
 						}
 
-						disk_full = currentStatus;
+						disk_full = current_status;
 					}
 
 					/* Ping AVR */
@@ -1066,7 +1066,7 @@ static void destroy_timer(event *e)
 /**
  * Scan macro objects for a valid event from @a time today
  */
-static int FindNextToday(long timeNow, event *cur, long *time)
+static int find_next_today(long timeNow, event *cur, long *time)
 {
 	int found = 0;
 
@@ -1094,7 +1094,7 @@ static int FindNextToday(long timeNow, event *cur, long *time)
  *
  * @return 1 if an event was found and 0 otherwise.
  */
-static int FindNextDay(event *cur, long *time, long *offset)
+static int find_next_day(event *cur, long *time, long *offset)
 {
 	int found = 0;
 
@@ -1114,35 +1114,35 @@ static int FindNextDay(event *cur, long *time, long *offset)
 /**
  * Get next timed macro event.
  */
-static void GetTime(long timeNow, event *pTimerLocate, long *time, long defaultTime)
+static void get_time(long time_now, event *pTimerLocate, long *time, long defaultTime)
 {
-	long lOffset = 0;
-	char onLocated = 0;
+	long offset = 0;
+	char located = 0;
 	event *pTimer;
 
 	/* Ensure that macro timer object is valid */
 	if (pTimerLocate && pTimerLocate->next != NULL) {
-		lOffset = 0;
+		offset = 0;
 		pTimer = pTimerLocate;
 		/* Next event for today */
-		onLocated = FindNextToday(timeNow, pTimer, time);
+		located = find_next_today(time_now, pTimer, time);
 
 		/* Failed to find a time for today, look for the next
 		 * power-up time */
-		if (!onLocated) {
+		if (!located) {
 			pTimer = pTimerLocate;
-			onLocated = FindNextDay(pTimer, time, &lOffset);
+			located = find_next_day(pTimer, time, &offset);
 		}
 
 		/* Nothing for week-end, look at start */
-		if (!onLocated) {
+		if (!located) {
 			*time = pTimerLocate->time;
-			lOffset = ((6 - last_day) + pTimerLocate->day) * TWENTYFOURHR;
+			offset = ((6 - last_day) + pTimerLocate->day) * TWENTYFOURHR;
 		}
 
-		*time += lOffset;
+		*time += offset;
 
-		if (lOffset > TWENTYFOURHR && defaultTime > 0)
+		if (offset > TWENTYFOURHR && defaultTime > 0)
 			*time = defaultTime;
 	} else
 		*time = defaultTime;
@@ -1174,12 +1174,12 @@ static void set_avr_timer(int type)
 		current_time = (decode_time->tm_hour * 60) + decode_time->tm_min;
 		last_day = decode_time->tm_wday;
 
-		GetTime(current_time, off_timer, &offTime, off_time);
+		get_time(current_time, off_timer, &offTime, off_time);
 		/* Correct search if switch-off is tommorrow */
 		if (offTime > TWENTYFOURHR)
-			GetTime(current_time, on_timer, &onTime, on_time);
+			get_time(current_time, on_timer, &onTime, on_time);
 		else
-			GetTime(offTime, on_timer, &onTime, on_time);
+			get_time(offTime, on_timer, &onTime, on_time);
 
 		/* Protect for tomorrows setting */
 		if (offTime < current_time)
