@@ -1,7 +1,7 @@
 # AVR Event Daemon (old PPC-EVTD)
 
 Copyright © 2006	Bob Perry <lb-source@users.sf.net>
-Copyright © 2008-2011	Rogério Brito <rbrito@users.sf.net>
+Copyright © 2008-2012	Rogério Brito <rbrito@users.sf.net>
 
 > This program is free software; you can redistribute it and/or modify it
 > under the terms of the GNU General Public License as published by the
@@ -21,15 +21,15 @@ Copyright © 2008-2011	Rogério Brito <rbrito@users.sf.net>
 
 # Usage
 
-The avr-evtd daemon is aimed at the Buffalo series of Linkstation and
-Kurobox.  This replaces the existing ppc_uartd daemon.  The daemon
+The `avr-evtd` daemon is aimed at the Buffalo series of Linkstation and
+Kurobox.  This replaces the existing `ppc_uartd` daemon.  The daemon
 configures the AVR and provides the necessary 'keep-alives' to the AVR
 watchdog timer.
 
-The daemon also checks that the /mnt and / filesystems are within scope
+The daemon also checks that the `/mnt` and `/` filesystems are within scope
 (disk space remaining) and also monitors the power button and the 'red'
 reset button.  These button events are turned into requests into the
-EventScript.  This allows a user to control what occurs (system wise) when
+`EventScript`.  This allows a user to control what occurs (system wise) when
 an event is received.  The same script is also used by the timer shutdown
 process.
 
