@@ -9,9 +9,6 @@ TITLE=Linkstation AVR Event daemon
 #
 # User configurable variables
 #
-# Add -DUBOOT to the build process if you are using U-Boot as this will
-# remove the redundant EM-Mode NGNGNG poke into flash
-#
 CC = cc
 CFLAGS = -Wall -Wextra -Os
 
