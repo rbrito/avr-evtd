@@ -87,29 +87,29 @@ event *off_timer;
 event *on_timer;
 int serialfd;
 time_t last_config_mtime;
-int TimerFlag;
-long ShutdownTimer = 9999;	/* Careful here */
-char FirstTimeFlag = 1;
-char FirstWarning = 1;
-long OffTime = -1;		/* Default, NO defaults */
-long OnTime = -1;		/* Default, NO defaults */
+int timer_flag;
+long shutdown_timer = 9999;	/* Careful here */
+char first_time_flag = 1;
+char first_warning = 1;
+long off_time = -1;		/* Default, NO defaults */
+long on_time = -1;		/* Default, NO defaults */
 
-char CommandLineUpdate = 1;
+char command_line_update = 1;
 
 int max_pct = 90;
 int last_day;
 int refresh_rate = 40;
 int hold_cycle = 3;
-char pesterMessage;
-int fanFaultSeize = 30;
-int checkState = 1;		/* Will force an update within 15
+char pester_message;
+int fan_fault_seize = 30;
+int check_state = 1;		/* Will force an update within 15
 				 * seconds of starting up to resolve
 				 * those pushed out refresh times */
 char em_mode;
 char rootdev[10];		/* root filesystem device */
 char workdev[10];		/* work filesystem device */
 int diskcheck_number;
-char keepAlive = 0x5B;		/* '[' */
+char keep_alive = 0x5B;		/* '[' */
 char reset_presses;
 int pct_used;
 
@@ -356,33 +356,33 @@ static void avr_evtd_main(void)
 		/* After file change or startup, update the time within
 		 * 20 secs as the user may have pushed the refresh time
 		 * out */
-		if (checkState > 0) {
+		if (check_state > 0) {
 			res = 2;
 		} else {
 			/* Change our timer to check for a power/reset
 			 * request need a faster poll rate here to see
 			 * the double press event properly */
-			if (pushedpower || pushedreset || FirstTimeFlag > 1) {
+			if (pushedpower || pushedreset || first_time_flag > 1) {
 				timeout_poll.tv_usec = 250;
 				res = 0;
-				checkState = -2;
+				check_state = -2;
 				/* Hold off any configuration file updates */
 			}
 		}
 
-		if (checkState != -2) {
+		if (check_state != -2) {
 			/* Ensure we shutdown on the nail if the timer
 			 * is enabled will be off slightly as timer
 			 * reads are different */
-			if (TimerFlag == 1) {
-				if (ShutdownTimer < res)
-					res = ShutdownTimer;
+			if (timer_flag == 1) {
+				if (shutdown_timer < res)
+					res = shutdown_timer;
 			}
 
 			/* If we have a fan failure report, then ping
 			 * frequently */
 			if (fan_fault > 0)
-				res = fan_fault == 6 ? fanFaultSeize : 2;
+				res = fan_fault == 6 ? fan_fault_seize : 2;
 		}
 
 		timeout_poll.tv_sec = res;
@@ -400,7 +400,7 @@ static void avr_evtd_main(void)
 			/* Read AVR message */
 			res = read(serialfd, buf, 16);
 			/* AVR command detected so force to ping only */
-			checkState = -2;
+			check_state = -2;
 
 			switch (buf[0]) {
 				/* power button release */
@@ -408,14 +408,14 @@ static void avr_evtd_main(void)
 				if (PressedPowerFlag == 0) {
 					cmd = POWER_RELEASE;
 
-					if ((time_now - power_press) <= HOLD_TIME && FirstTimeFlag < 2) {
+					if ((time_now - power_press) <= HOLD_TIME && first_time_flag < 2) {
 						cmd = USER_RESET;
-					} else if (ShutdownTimer < FIVE_MINUTES || FirstTimeFlag > 1) {
-						if (FirstTimeFlag == 0)
-							FirstTimeFlag = 10;
+					} else if (shutdown_timer < FIVE_MINUTES || first_time_flag > 1) {
+						if (first_time_flag == 0)
+							first_time_flag = 10;
 
-						ShutdownTimer += FIVE_MINUTES;
-						FirstTimeFlag--;
+						shutdown_timer += FIVE_MINUTES;
+						first_time_flag--;
 						extraTime = 1;
 					}
 
@@ -473,7 +473,7 @@ static void avr_evtd_main(void)
 				/* Flag the EventScript */
 				exec_cmd(FAN_FAULT, fan_fault);
 
-				if (fanFaultSeize > 0) {
+				if (fan_fault_seize > 0) {
 					fan_fault = 2;
 					fault_time = time_now;
 				} else
@@ -538,25 +538,25 @@ static void avr_evtd_main(void)
 			}
 
 			/* Skip this processing during power/reset scan */
-			if (!pushedreset && !pushedpower && FirstTimeFlag < 2) {
+			if (!pushedreset && !pushedpower && first_time_flag < 2) {
 				/* shutdown timer event? */
-				if (TimerFlag == 1) {
+				if (timer_flag == 1) {
 					/* Decrement our powerdown timer */
-					if (ShutdownTimer > 0) {
+					if (shutdown_timer > 0) {
 						time_diff = (time_now - last_shutdown_ping);
 
 						/* If time difference is more than a minute,
 						 * force a re-calculation of shutdown time */
 						if (refresh_rate + 60 > abs(time_diff)) {
-							ShutdownTimer -= time_diff;
+							shutdown_timer -= time_diff;
 
 							/* Within five minutes of shutdown? */
-							if (ShutdownTimer < FIVE_MINUTES) {
-								if (FirstTimeFlag) {
-									FirstTimeFlag = 0;
+							if (shutdown_timer < FIVE_MINUTES) {
+								if (first_time_flag) {
+									first_time_flag = 0;
 
 									/* Inform the EventScript */
-									exec_cmd(FIVE_SHUTDOWN, ShutdownTimer);
+									exec_cmd(FIVE_SHUTDOWN, shutdown_timer);
 
 									/* Re-validate out time
 									   wake-up; do not perform
@@ -587,17 +587,17 @@ static void avr_evtd_main(void)
 
 				/* Split loading, handle disk checks
 				 * over a number of cycles, reduce CPU hog */
-				switch (checkState) {
+				switch (check_state) {
 					/* Kick state machine */
 				case 0:
-					checkState = 1;
+					check_state = 1;
 					break;
 
 					/* Check for timer change
 					 * through configuration file */
 				case 1:
 					check_timer(0);
-					checkState = 2;
+					check_state = 2;
 					break;
 
 					/* Check the disk and ping AVR accordingly */
@@ -607,12 +607,12 @@ static void avr_evtd_main(void)
 					 * and output appropriate AVR
 					 * command? */
 				case 2:
-					cmd = keepAlive;
+					cmd = keep_alive;
 
 					if ((currentStatus = check_disk())) {
 						/* Execute some user code on disk full */
-						if (FirstWarning) {
-							FirstWarning = pesterMessage;
+						if (first_warning) {
+							first_warning = pester_message;
 							exec_cmd(DISK_FULL, pct_used);
 						}
 					}
@@ -624,7 +624,7 @@ static void avr_evtd_main(void)
 						if (currentStatus)
 							cmd++;
 						else {
-							FirstWarning = 0;
+							first_warning = 0;
 							exec_cmd(DISK_FULL, 0);
 						}
 
@@ -634,12 +634,12 @@ static void avr_evtd_main(void)
 					/* Ping AVR */
 					write_to_uart(cmd);
 
-					checkState = 3;
+					check_state = 3;
 					break;
 
 					/* Wait for next refresh kick */
 				case 3:
-					checkState = 0;
+					check_state = 0;
 					break;
 				}
 			}
@@ -655,7 +655,7 @@ static void avr_evtd_main(void)
 			case 2:
 			case 3:
 			case 4:
-				if ((fault_time + fanFaultSeize) < time_now) {
+				if ((fault_time + fan_fault_seize) < time_now) {
 					/* Run some user script on no
 					 * fan restart message after
 					 * FAN_FAULT_SEIZE time */
@@ -678,10 +678,10 @@ static void avr_evtd_main(void)
 			/* Check that the shutdown pause function (if
 			 * activated) is still available, no then ping
 			 * the delayed time */
-			if ((power_press + SP_MONITOR_TIME) < time_now && FirstTimeFlag > 1) {
+			if ((power_press + SP_MONITOR_TIME) < time_now && first_time_flag > 1) {
 				/* Inform the EventScript */
-				exec_cmd(FIVE_SHUTDOWN, (int) (ShutdownTimer/60.0));
-				FirstTimeFlag = 1;
+				exec_cmd(FIVE_SHUTDOWN, (int) (shutdown_timer/60.0));
+				first_time_flag = 1;
 				power_press = 0;
 			}
 		}
@@ -838,8 +838,8 @@ static void parse_config(char *content)
 	pOff = off_timer = calloc(sizeof(event), sizeof(char));
 
 	/* Establish some defaults */
-	pesterMessage = 0;
-	TimerFlag = 0;
+	pester_message = 0;
+	timer_flag = 0;
 	refresh_rate = 40;
 	hold_cycle = 3;
 	diskcheck_number = 0;
@@ -892,7 +892,7 @@ static void parse_config(char *content)
 			/* Timer on/off? */
 		case 0:
 			if (strcasecmp(pos, "ON") == 0)
-				TimerFlag = 1;
+				timer_flag = 1;
 			break;
 
 			/* Shutdown? */
@@ -920,7 +920,7 @@ static void parse_config(char *content)
 			hour = minutes = 0;
 		process:
 			if (!sscanf(pos, "%02d:%02d", &hour, &minutes))
-				TimerFlag = -1;
+				timer_flag = -1;
 
 			/* Ensure time entry is valid */
 			else if ((hour >= 0 && hour <= 24)
@@ -952,11 +952,11 @@ static void parse_config(char *content)
 
 				/* Now handle the defaults */
 				else if (cmd == 1)
-					OffTime = (hour * 60) + minutes;
+					off_time = (hour * 60) + minutes;
 				else if (cmd == 3)
-					OnTime = (hour * 60) + minutes;
+					on_time = (hour * 60) + minutes;
 			} else
-				TimerFlag = -1;
+				timer_flag = -1;
 
 			/* Update our pointers */
 			if (cmd < 3)
@@ -1010,16 +1010,16 @@ static void parse_config(char *content)
 
 		case 15:
 			if (strcasecmp(pos, "ON") == 0)
-				pesterMessage = 1;
+				pester_message = 1;
 
 			/* Fan failure stop time before event trigger */
 		case 16:
 			if (strcasecmp(pos, "OFF") == 0)
-				fanFaultSeize = 0;
+				fan_fault_seize = 0;
 			else {
-				if (!sscanf(pos, "%02d", &fanFaultSeize))
-					fanFaultSeize = FAN_SEIZE_TIME;
-				ensure_limits(&fanFaultSeize, 1, 60);
+				if (!sscanf(pos, "%02d", &fan_fault_seize))
+					fan_fault_seize = FAN_SEIZE_TIME;
+				ensure_limits(&fan_fault_seize, 1, 60);
 			}
 			break;
 
@@ -1037,8 +1037,8 @@ static void parse_config(char *content)
 		}
 	}
 
-	if (TimerFlag < 0) {
-		TimerFlag = 0;
+	if (timer_flag < 0) {
+		timer_flag = 0;
 		report_error(3);
 	}
 }
@@ -1166,7 +1166,7 @@ static void set_avr_timer(int type)
 	long offTime, onTime;
 
 	/* Timer enabled? */
-	if (TimerFlag) {
+	if (timer_flag) {
 		/* Get time of day */
 		time(&ltime);
 
@@ -1174,23 +1174,23 @@ static void set_avr_timer(int type)
 		current_time = (decode_time->tm_hour * 60) + decode_time->tm_min;
 		last_day = decode_time->tm_wday;
 
-		GetTime(current_time, off_timer, &offTime, OffTime);
+		GetTime(current_time, off_timer, &offTime, off_time);
 		/* Correct search if switch-off is tommorrow */
 		if (offTime > TWENTYFOURHR)
-			GetTime(current_time, on_timer, &onTime, OnTime);
+			GetTime(current_time, on_timer, &onTime, on_time);
 		else
-			GetTime(offTime, on_timer, &onTime, OnTime);
+			GetTime(offTime, on_timer, &onTime, on_time);
 
 		/* Protect for tomorrows setting */
 		if (offTime < current_time)
-			ShutdownTimer = (TWELVEHR + (offTime - (current_time - TWELVEHR))) * 60;
+			shutdown_timer = (TWELVEHR + (offTime - (current_time - TWELVEHR))) * 60;
 		else
-			ShutdownTimer = (offTime - current_time) * 60;
+			shutdown_timer = (offTime - current_time) * 60;
 
 		/* Remeber the current seconds passed the minute */
-		ShutdownTimer -= decode_time->tm_sec;
+		shutdown_timer -= decode_time->tm_sec;
 
-		ttime = ltime + ShutdownTimer;
+		ttime = ltime + shutdown_timer;
 		decode_time = localtime(&ttime);
 
 		sprintf(message, "Timer is set with %02d/%02d %02d:%02d",
@@ -1215,7 +1215,7 @@ static void set_avr_timer(int type)
 
 		/* Limit max off time to next power-on to the resolution of the timer */
 		if (onTime > TIMER_RESOLUTION
-		    && (onTime - (ShutdownTimer / 60)) > TIMER_RESOLUTION) {
+		    && (onTime - (shutdown_timer / 60)) > TIMER_RESOLUTION) {
 			wait_time -= ((onTime - TIMER_RESOLUTION) * 672) / 10;
 			report_error(2);
 			/* Reset to timer resolution */
@@ -1246,13 +1246,13 @@ static void set_avr_timer(int type)
 
 		/* Complete output and set LED state (power) to pulse */
 		write_to_uart(0x3F);	/* '?' */
-		keepAlive = 0x5B;	/* '[' */
+		keep_alive = 0x5B;	/* '[' */
 	} else {		/* Inform AVR its not in timer mode */
 		write_to_uart(0x3E);	/* '>' */
-		keepAlive = 0x5A;	/* 'Z' */
+		keep_alive = 0x5A;	/* 'Z' */
 	}
 
-	write_to_uart(keepAlive);
+	write_to_uart(keep_alive);
 }
 
 
@@ -1271,9 +1271,9 @@ static void check_timer(int type)
 	struct stat filestatus;
 
 	/* Time from avr-evtd configuration file */
-	if (CommandLineUpdate == 1) {
+	if (command_line_update == 1) {
 		/* File is missing so default to off and do not do this again */
-		CommandLineUpdate = 2;
+		command_line_update = 2;
 
 		if (stat(CONFIG_FILE_LOCATION, &filestatus) == 0) {
 			if (filestatus.st_mtime != last_config_mtime) {
@@ -1281,14 +1281,14 @@ static void check_timer(int type)
 
 				if (file) {
 					if (read(file, buff, sizeof(buff) - 1) > 0) {
-						CommandLineUpdate = 1;
+						command_line_update = 1;
 						parse_config(buff);
 						set_avr_timer(type);
 					}
 					close(file);
 				}
 			} else
-				CommandLineUpdate = 1;
+				command_line_update = 1;
 
 			last_config_mtime = filestatus.st_mtime;
 		} else {
@@ -1297,8 +1297,8 @@ static void check_timer(int type)
 	}
 
 	/* Ensure that if we have any configuration errors we at least set timer off */
-	if (CommandLineUpdate == 2) {
-		CommandLineUpdate = 3;
+	if (command_line_update == 2) {
+		command_line_update = 3;
 		set_avr_timer(type);
 		report_error(1);
 	}
