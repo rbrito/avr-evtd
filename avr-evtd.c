@@ -680,7 +680,7 @@ static void avr_evtd_main(void)
 			 * the delayed time */
 			if ((power_press + SP_MONITOR_TIME) < time_now && first_time_flag > 1) {
 				/* Inform the EventScript */
-				exec_cmd(FIVE_SHUTDOWN, (int) (shutdown_timer/60.0));
+				exec_cmd(FIVE_SHUTDOWN, shutdown_timer/60);
 				first_time_flag = 1;
 				power_press = 0;
 			}
@@ -810,7 +810,7 @@ static void parse_config(char *content)
 		"WORK"
 	};
 
-#define NCOMMANDS		(int) (sizeof(command)/sizeof(const char*))
+#define NCOMMANDS		(sizeof(command)/sizeof(const char*))
 
 	char *pos;
 	char *last;		/* Used by strtok_r to point to current token */
