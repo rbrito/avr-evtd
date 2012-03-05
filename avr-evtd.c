@@ -137,7 +137,7 @@ static void exec_cmd(char cmd, int cmd2);
 
 
 /**
- * Print usage of the program.
+ * Print usage of the program and terminate execution.
  */
 static void usage(void)
 {
@@ -148,6 +148,7 @@ static void usage(void)
 	       "  -e            force the device to enter emergency mode\n"
 	       "  -v            display program version\n"
 	       "  -h            display this usage notice\n");
+	exit(1);
 }
 
 
@@ -1313,7 +1314,6 @@ int main(int argc, char *argv[])
 
 	if (argc == 1) {
 		usage();
-		exit(1);
 	}
 
 	--argc;
@@ -1330,7 +1330,6 @@ int main(int argc, char *argv[])
 			} else {
 				printf("Option -d requires an argument.\n\n");
 				usage();
-				exit(1);
 			}
 			break;
 		case 'i':
@@ -1347,11 +1346,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'h':
 			usage();
-			exit(0);
 		default:
 			printf("Option unknown: %s.\n\n", *argv);
 			usage();
-			exit(1);
 		}
 		--argc;
 		++argv;
