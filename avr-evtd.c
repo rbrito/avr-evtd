@@ -4,7 +4,7 @@
  * Linkstation AVR daemon
  *
  * Copyright © 2006 Bob Perry <lb-source@users.sf.net>
- * Copyright © 2008-2011 Rogério Brito <rbrito@users.sf.net>
+ * Copyright © 2008-2012 Rogério Theodoro de Brito <rbrito@ime.usp.br>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
