@@ -767,13 +767,13 @@ static char check_disk(void)
 			if (strlen(root_mountpt) > 0) {
 				if (statfs(root_mountpt, &mountfs) == -1)
 					goto err_not_avail;
-				pct_root = 100 - (int) ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
+				pct_root = 100 - ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
 			}
 
 			if (strlen(work_mountpt) > 0) {
 				if (statfs(work_mountpt, &mountfs) == -1)
 					goto err_not_avail;
-				pct_work = 100 - (int) ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
+				pct_work = 100 - ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
 			}
 		}
 	}
