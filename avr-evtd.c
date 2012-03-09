@@ -106,8 +106,8 @@ int check_state = 1;		/* Will force an update within 15
 				 * seconds of starting up to resolve
 				 * those pushed out refresh times */
 char em_mode;
-char rootdev[10];		/* root filesystem device */
-char workdev[10];		/* work filesystem device */
+char root_device[10];		/* root filesystem device */
+char work_device[10];		/* work filesystem device */
 int diskcheck_number;
 char keep_alive = 0x5B;		/* '[' */
 char reset_presses;
@@ -734,9 +734,9 @@ static char check_disk(void)
 			for (i = 0; i < 60; i++) {
 				cmd = -1;
 
-				if (strcasecmp(pos, rootdev) == 0)
+				if (strcasecmp(pos, root_device) == 0)
 					cmd = 0;
-				else if (strcasecmp(pos, workdev) == 0)
+				else if (strcasecmp(pos, work_device) == 0)
 					cmd = 1;
 
 				pos = strtok(NULL, " \n");
@@ -1030,9 +1030,9 @@ static void parse_config(char *content)
 			if (strlen(pos) <= 5) {
 				diskcheck_number++;
 				if (cmd == 17)
-					sprintf(rootdev, "/dev/%s", pos);
+					sprintf(root_device, "/dev/%s", pos);
 				else
-					sprintf(workdev, "/dev/%s", pos);
+					sprintf(work_device, "/dev/%s", pos);
 			}
 			break;
 		}
