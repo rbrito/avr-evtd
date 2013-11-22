@@ -340,7 +340,6 @@ static void avr_evtd_main(void)
 	time_t time_now;
 	fd_set serialfd_set;
 	struct timeval timeout_poll;
-	int res;
 	int fan_fault = 0;
 	long time_diff;
 	char extraTime = 0;
@@ -353,7 +352,7 @@ static void avr_evtd_main(void)
 	/* Loop whilst port is valid */
 	while (serialfd) {
 		timeout_poll.tv_usec = 0;
-		res = refresh_rate;
+		int res = refresh_rate;
 		/* After file change or startup, update the time within
 		 * 20 secs as the user may have pushed the refresh time
 		 * out */
@@ -1115,16 +1114,12 @@ static int find_next_day(event *cur, long *time, long *offset)
  */
 static void get_time(long time_now, event *pTimerLocate, long *time, long defaultTime)
 {
-	long offset = 0;
-	char located = 0;
-	event *pTimer;
-
 	/* Ensure that macro timer object is valid */
 	if (pTimerLocate && pTimerLocate->next != NULL) {
-		offset = 0;
-		pTimer = pTimerLocate;
+		long offset = 0;
+		event *pTimer = pTimerLocate;
 		/* Next event for today */
-		located = find_next_today(time_now, pTimer, time);
+		char located = find_next_today(time_now, pTimer, time);
 
 		/* Failed to find a time for today, look for the next
 		 * power-up time */
@@ -1160,7 +1155,6 @@ static void set_avr_timer(int type)
 	struct tm *decode_time;
 	char message[80];
 	char avr_cmd;
-	int i;
 	long mask = 0x800;
 	long offTime, onTime;
 
@@ -1235,7 +1229,7 @@ static void set_avr_timer(int type)
 		write_to_uart(0x38);	/* '8' */
 
 		/* Bit pattern (12-bits) detailing time to wake */
-		for (i = 0; i < 12; i++) {
+		for (int i = 0; i < 12; i++) {
 			avr_cmd = (onTime & mask ? 0x21 : 0x20) + ((11 - i) * 2);
 			mask >>= 1;
 
