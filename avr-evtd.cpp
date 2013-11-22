@@ -119,7 +119,7 @@ static void check_timer(int type);
 static void termination_handler(int signum);
 static int open_serial(char *device, char probe);
 
-static inline void ensure_limits(int *value, int lower, int upper);
+static inline void ensure_limits(int &value, int lower, int upper);
 
 static void close_serial(void);
 static void avr_evtd_main(void);
@@ -160,10 +160,10 @@ static void usage(void)
  * @param lower Integer specifying the lowest accepted value.
  * @param upper Integer specifying the highest accepted value.
  */
-static inline void ensure_limits(int *value, int lower, int upper)
+static inline void ensure_limits(int &value, int lower, int upper)
 {
-	if (*value < lower) *value = lower;
-	if (*value > upper) *value = upper;
+	if (value < lower) value = lower;
+	if (value > upper) value = upper;
 }
 
 
@@ -835,8 +835,8 @@ static void parse_config(char *content)
 	destroy_timer(on_timer);
 
 	/* Now create our timer objects for on and off events */
-	pOn = on_timer = calloc(sizeof(event), sizeof(char));
-	pOff = off_timer = calloc(sizeof(event), sizeof(char));
+	pOn = on_timer = new event;
+	pOff = off_timer = new event;
 
 	/* Establish some defaults */
 	pester_message = 0;
@@ -971,21 +971,21 @@ static void parse_config(char *content)
 		case 5:
 			if (!sscanf(pos, "%d", &max_pct))
 				max_pct = -1;
-			ensure_limits(&max_pct, -1, 100);
+			ensure_limits(max_pct, -1, 100);
 			break;
 
 			/* Refresh/re-scan time? */
 		case 6:
 			if (!sscanf(pos, "%03d", &refresh_rate))
 				refresh_rate = 40;
-			ensure_limits(&refresh_rate, 10, FIVE_MINUTES);
+			ensure_limits(refresh_rate, 10, FIVE_MINUTES);
 			break;
 
 			/* Button hold-in time? */
 		case 7:
 			if (!sscanf(pos, "%02d", &hold_cycle))
 				hold_cycle = HOLD_SECONDS;
-			ensure_limits(&hold_cycle, 2, 10);
+			ensure_limits(hold_cycle, 2, 10);
 			break;
 
 			/* Macro days in week? */
@@ -1020,7 +1020,7 @@ static void parse_config(char *content)
 			else {
 				if (!sscanf(pos, "%02d", &fan_fault_seize))
 					fan_fault_seize = FAN_SEIZE_TIME;
-				ensure_limits(&fan_fault_seize, 1, 60);
+				ensure_limits(fan_fault_seize, 1, 60);
 			}
 			break;
 
