@@ -1025,14 +1025,12 @@ static void parse_config(char *content)
 			break;
 
 		/* Specified partition names */
-		case 17:
-		case 18:
+		case 17: /* root device */
+		case 18: /* work device */
 			if (strlen(pos) <= 5) {
 				diskcheck_number++;
-				if (cmd == 17)
-					sprintf(root_device, "/dev/%s", pos);
-				else
-					sprintf(work_device, "/dev/%s", pos);
+				char *tgt_device = (cmd == 17) ? root_device : work_device;
+				sprintf(tgt_device, "/dev/%s", pos);
 			}
 			break;
 		}
