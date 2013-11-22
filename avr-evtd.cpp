@@ -969,7 +969,7 @@ static void parse_config(char *content)
 
 			/* Disk check percentage? */
 		case 5:
-			if (!sscanf(pos, "%d", &max_pct))
+			if (!sscanf(pos, "%5d", &max_pct))
 				max_pct = -1;
 			ensure_limits(max_pct, -1, 100);
 			break;
