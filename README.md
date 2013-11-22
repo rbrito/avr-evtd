@@ -79,4 +79,4 @@ Debian as the distribution. Reports of bugs are welcome.
 
 Please just mention our name if modified or linked to.
 Bob Perry (UK)		June 2006.
-Rogério Brito (BR)	March 2012.
+Rogério Brito (BR)	November 2013.
