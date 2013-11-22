@@ -1024,7 +1024,7 @@ static void parse_config(char *content)
 			}
 			break;
 
-		/* Specified partiton names */
+		/* Specified partition names */
 		case 17:
 		case 18:
 			if (strlen(pos) <= 5) {
