@@ -40,37 +40,37 @@
 #include <linux/serial.h>
 
 /* A few defs for later */
-#define HOLD_TIME		1
-#define HOLD_SECONDS		3
-#define FIVE_MINUTES		(5*60)
-#define TWELVEHR		(12*60)
-#define TWENTYFOURHR		(TWELVEHR*2)
-#define TIMER_RESOLUTION	4095
-#define FAN_SEIZE_TIME		30
-#define EM_MODE_TIME		20
-#define SP_MONITOR_TIME		10
+const int HOLD_TIME = 1;
+const int HOLD_SECONDS = 3;
+const int FIVE_MINUTES = (5*60);
+const int TWELVEHR = (12*60);
+const int TWENTYFOURHR = (TWELVEHR*2);
+const int TIMER_RESOLUTION = 4095;
+const int FAN_SEIZE_TIME = 30;
+const int EM_MODE_TIME = 20;
+const int SP_MONITOR_TIME = 10;
 
 /* Event message definitions */
-#define SPECIAL_RESET		'0'
-#define AVR_HALT		'1'
-#define TIMED_SHUTDOWN		'2'
-#define POWER_RELEASE		'3'
-#define POWER_PRESS		'4'
-#define RESET_RELEASE		'5'
-#define RESET_PRESS		'6'
-#define USER_POWER_DOWN		'7'
-#define USER_RESET		'8'
-#define DISK_FULL		'9'
-#define FAN_FAULT		'F'
-#define EM_MODE			'E'
-#define FIVE_SHUTDOWN		'S'
-#define ERRORED			'D'
+const unsigned char SPECIAL_RESET = '0';
+const unsigned char AVR_HALT = '1';
+const unsigned char TIMED_SHUTDOWN = '2';
+const unsigned char POWER_RELEASE = '3';
+const unsigned char POWER_PRESS = '4';
+const unsigned char RESET_RELEASE = '5';
+const unsigned char RESET_PRESS = '6';
+const unsigned char USER_POWER_DOWN = '7';
+const unsigned char USER_RESET = '8';
+const unsigned char DISK_FULL = '9';
+const unsigned char FAN_FAULT = 'F';
+const unsigned char EM_MODE = 'E';
+const unsigned char FIVE_SHUTDOWN = 'S';
+const unsigned char ERRORED = 'D';
 
 /* Constants for readable code */
-#define COMMENT_PREFIX		'#'
+const unsigned char COMMENT_PREFIX = '#';
 #define CONFIG_FILE_LOCATION	"/etc/default/avr-evtd"
 #define VERSION			"Linkstation/Kuro AVR daemon 1.7.7\n"
-#define CMD_LINE_LENGTH		64
+const int CMD_LINE_LENGTH = 64;
 
 /* Macro event object definition */
 struct event {
