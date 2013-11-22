@@ -199,7 +199,7 @@ static int open_serial(char *device, char probe)
 	struct termios newtio;
 
 	/* Need read/write access to the AVR */
-	if ((serialfd = open(device, O_RDWR | O_NOCTTY) < 0)) {
+	if ((serialfd = open(device, O_RDWR | O_NOCTTY)) < 0) {
 		perror(device);
 		return -1;
 	}
