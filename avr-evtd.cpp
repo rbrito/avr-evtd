@@ -940,13 +940,13 @@ static void parse_config(char *content)
 								j = 0;
 							pTimer->day = j;
 							pTimer->time = (hour * 60) + minutes;
-							pTimer->next = calloc(sizeof(event), sizeof(char));
+							pTimer->next = new event;
 							pTimer = pTimer->next;
 						}
 					} else {
 						pTimer->day = process_day;
 						pTimer->time = (hour * 60) + minutes;
-						pTimer->next = calloc(sizeof(event), sizeof(char));
+						pTimer->next = new event;
 						pTimer = pTimer->next;
 					}
 				}
@@ -1058,7 +1058,7 @@ static void destroy_timer(event *e)
 
 	while (e) {
 		aux = e->next;
-		free(e);
+		delete e;
 		e = aux;
 	}
 }
