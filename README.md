@@ -1,7 +1,7 @@
 # AVR Event Daemon (old PPC-EVTD)
 
 Copyright © 2006	Bob Perry <lb-source@users.sf.net>
-Copyright © 2008-2012	Rogério Brito <rbrito@users.sf.net>
+Copyright © 2008-2015	Rogério Brito <rbrito@users.sf.net>
 
 > This program is free software; you can redistribute it and/or modify it
 > under the terms of the GNU General Public License as published by the
@@ -79,7 +79,7 @@ Debian as the distribution. Reports of bugs are welcome.
 
 Please just mention our name if modified or linked to.
 Bob Perry (UK)		June 2006.
-Rogério Brito (BR)	March 2013.
+Rogério Brito (BR)	May 2015.
 
 
 ----
