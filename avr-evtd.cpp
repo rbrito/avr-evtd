@@ -35,9 +35,11 @@
 #include <syslog.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include <sys/time.h>
 #include <linux/serial.h>
+
+#include <cstdlib>
+
 
 /* A few defs for later */
 const int HOLD_TIME = 1;
@@ -547,7 +549,7 @@ static void avr_evtd_main(void)
 
 						/* If time difference is more than a minute,
 						 * force a re-calculation of shutdown time */
-						if (refresh_rate + 60 > abs(time_diff)) {
+						if (refresh_rate + 60 > labs(time_diff)) {
 							shutdown_timer -= time_diff;
 
 							/* Within five minutes of shutdown? */
