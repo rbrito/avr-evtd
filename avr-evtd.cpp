@@ -121,8 +121,6 @@ static void check_timer(int type);
 static void termination_handler(int signum);
 static int open_serial(char *device, char probe);
 
-static inline void ensure_limits(int &value, int lower, int upper);
-
 static void close_serial(void);
 static void avr_evtd_main(void);
 static char check_disk(void);
@@ -162,7 +160,8 @@ static void usage(void)
  * @param lower Integer specifying the lowest accepted value.
  * @param upper Integer specifying the highest accepted value.
  */
-static inline void ensure_limits(int &value, int lower, int upper)
+template <typename T>
+static inline void ensure_limits(T &value, T lower, T upper)
 {
 	if (value < lower) value = lower;
 	if (value > upper) value = upper;
