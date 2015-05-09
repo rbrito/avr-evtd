@@ -1152,7 +1152,6 @@ static void set_avr_timer(int type)
 	time_t ltime, ttime;
 	struct tm *decode_time;
 	char message[80];
-	char avr_cmd;
 	long mask = 0x800;
 	long offTime, onTime;
 
@@ -1231,7 +1230,7 @@ static void set_avr_timer(int type)
 
 		/* Bit pattern (12-bits) detailing time to wake */
 		for (int i = 0; i < 12; i++) {
-			avr_cmd = (onTime & mask ? 0x21 : 0x20) + ((11 - i) * 2);
+			char avr_cmd = (onTime & mask ? 0x21 : 0x20) + ((11 - i) * 2);
 			mask >>= 1;
 
 			/* Output to AVR */
@@ -1261,7 +1260,6 @@ static void set_avr_timer(int type)
 static void check_timer(int type)
 {
 	char buff[4096];
-	int file;
 	struct stat filestatus;
 
 	/* Time from avr-evtd configuration file */
@@ -1271,7 +1269,7 @@ static void check_timer(int type)
 
 		if (stat(CONFIG_FILE_LOCATION, &filestatus) == 0) {
 			if (filestatus.st_mtime != last_config_mtime) {
-				file = open(CONFIG_FILE_LOCATION, O_RDONLY);
+				int file = open(CONFIG_FILE_LOCATION, O_RDONLY);
 
 				if (file) {
 					if (read(file, buff, sizeof(buff) - 1) > 0) {
