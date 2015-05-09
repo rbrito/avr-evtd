@@ -339,7 +339,6 @@ static void avr_evtd_main(void)
 	time_t power_press = idle;
 	time_t fault_time;
 	time_t last_shutdown_ping;
-	time_t time_now;
 	fd_set serialfd_set;
 	struct timeval timeout_poll;
 	int fan_fault = 0;
@@ -395,7 +394,7 @@ static void avr_evtd_main(void)
 		/* Wait for AVR message or time-out? */
 		res = select(serialfd + 1, &serialfd_set, NULL, NULL, &timeout_poll);
 
-		time_now = time(NULL);
+		time_t time_now = time(NULL);
 
 		/* catch input? */
 		if (res > 0) {
@@ -1151,8 +1150,6 @@ static void get_time(long time_now, event *pTimerLocate, long *time, long defaul
  */
 static void set_avr_timer(int type)
 {
-	const char *msg_kind[] = { "file update", "re-validation", "clock skew" };
-	long current_time, wait_time;
 	time_t ltime, ttime;
 	struct tm *decode_time;
 	char message[80];
@@ -1166,7 +1163,7 @@ static void set_avr_timer(int type)
 		time(&ltime);
 
 		decode_time = localtime(&ltime);
-		current_time = (decode_time->tm_hour * 60) + decode_time->tm_min;
+		long current_time = (decode_time->tm_hour * 60) + decode_time->tm_min;
 		last_day = decode_time->tm_wday;
 
 		get_time(current_time, off_timer, &offTime, off_time);
@@ -1194,6 +1191,8 @@ static void set_avr_timer(int type)
 
 		/* Now setup the AVR with the power-on time */
 
+		long wait_time;
+
 		/* Correct to AVR oscillator */
 		if (onTime < current_time) {
 			wait_time = (TWELVEHR + (onTime - (current_time - TWELVEHR))) * 60;
@@ -1219,6 +1218,8 @@ static void set_avr_timer(int type)
 
 		ttime = ltime + wait_time;
 		decode_time = localtime(&ttime);
+
+		const static char *msg_kind[] = { "file update", "re-validation", "clock skew" };
 
 		syslog(LOG_INFO, "%s-%02d/%02d %02d:%02d (Following timer %s)",
 		       message, decode_time->tm_mon + 1, decode_time->tm_mday,
