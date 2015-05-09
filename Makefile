@@ -9,8 +9,8 @@ TITLE=Linkstation AVR Event daemon
 #
 # User configurable variables
 #
-CC = c++
-CFLAGS = -Wall -Wextra -Weffc++ -Os
+CXX = c++
+CXXFLAGS = -Wall -Wextra -Weffc++ -Os
 
 ######################################################################
 # Almost no user should need to change the contents below
@@ -24,7 +24,7 @@ endif
 all: avr-evtd
 
 avr-evtd: avr-evtd.cpp
-	$(CC) $(CFLAGS) -o avr-evtd avr-evtd.cpp
+	$(CXX) $(CXXFLAGS) -o avr-evtd avr-evtd.cpp
 
 clean:
 	rm -f avr-evtd *~ *.o
