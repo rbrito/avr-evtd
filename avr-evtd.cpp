@@ -1174,10 +1174,9 @@ static void set_avr_timer(int type)
 			get_time(offTime, on_timer, &onTime, on_time);
 
 		/* Protect for tomorrows setting */
-		if (offTime < current_time)
-			shutdown_timer = (TWELVEHR + (offTime - (current_time - TWELVEHR))) * 60;
-		else
-			shutdown_timer = (offTime - current_time) * 60;
+		shutdown_timer = (offTime < current_time) ?
+			(TWELVEHR + (offTime - (current_time - TWELVEHR))) * 60 :
+			(offTime - current_time) * 60;
 
 		/* Remeber the current seconds passed the minute */
 		shutdown_timer -= decode_time->tm_sec;
