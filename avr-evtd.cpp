@@ -716,16 +716,14 @@ static char check_disk(void)
 	struct statfs mountfs;
 	int pct_root = 0;	/* percentage of the root fs that is used */
 	int pct_work = 0;	/* percentage of the work fs that is used */
-	char cmd;
 	char *pos;
-	int file;
-	int i;
 	char buff[4096];
 
 	if (FirstTime < diskcheck_number) {	/* first, determine paths from mtab */
 		FirstTime = 0;
 
-		if ((file = open("/etc/mtab", O_RDONLY)) < 0)
+		int file = open("/etc/mtab", O_RDONLY);
+		if (file < 0)
 			goto err_not_avail;
 
 		if (read(file, buff, 4095) > 0) {
@@ -833,7 +831,7 @@ static void parse_config(char *content)
 
 	char *pos;
 	char *last;		/* Used by strtok_r to point to current token */
-	int i, j;
+	int j;
 	int cmd;
 	int hour;
 	int minutes;
@@ -864,7 +862,7 @@ static void parse_config(char *content)
 	diskcheck_number = 0;
 
 	/* To prevent looping */
-	for (i = 0; i < 200; i++) {
+	for (int i = 0; i < 200; i++) {
 		cmd = -1;
 
 		if (pos[0] != COMMENT_PREFIX) {
