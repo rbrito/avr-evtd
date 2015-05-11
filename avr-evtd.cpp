@@ -810,6 +810,25 @@ static void parse_config(char *content)
 		"WORK"
 	};
 
+	enum cmd_code_t {
+		INVALID = -1,
+		TIMER,
+		SHUTDOWN,
+		OFF,
+		POWERON,
+		ON,
+		DISKCHECK,
+		REFRESH,
+		HOLD,
+		SUN, MON, TUE, WED, THR, FRI, SAT,
+		DISKNAG,
+		FANSTOP,
+		ROOT,
+		WORK
+	};
+
+
+
 #define NCOMMANDS		(sizeof(command)/sizeof(const char*))
 
 	char *pos;
@@ -890,32 +909,32 @@ static void parse_config(char *content)
 		/* Excuse the goto coding, not nice but necessary here */
 		switch (cmd) {
 			/* Timer on/off? */
-		case 0:
+		case TIMER:
 			if (strcasecmp(pos, "ON") == 0)
 				timer_flag = 1;
 			break;
 
 			/* Shutdown? */
-		case 1:
+		case SHUTDOWN:
 			pTimer = pOff;
 			hour = minutes = -1;
 			goto process;
 
 			/* Macro OFF? */
-		case 2:
+		case OFF:
 			pTimer = pOff;
 			hour = 24;
 			minutes = 0;
 			goto process;
 
 			/* Power-on? */
-		case 3:
+		case POWERON:
 			pTimer = pOn;
 			hour = minutes = -1;
 			goto process;
 
 			/* Macro ON? */
-		case 4:
+		case ON:
 			pTimer = pOn;
 			hour = minutes = 0;
 		process:
@@ -967,34 +986,34 @@ static void parse_config(char *content)
 			break;
 
 			/* Disk check percentage? */
-		case 5:
+		case DISKCHECK:
 			if (!sscanf(pos, "%5d", &max_pct))
 				max_pct = -1;
 			ensure_limits(max_pct, -1, 100);
 			break;
 
 			/* Refresh/re-scan time? */
-		case 6:
+		case REFRESH:
 			if (!sscanf(pos, "%03d", &refresh_rate))
 				refresh_rate = 40;
 			ensure_limits(refresh_rate, 10, FIVE_MINUTES);
 			break;
 
 			/* Button hold-in time? */
-		case 7:
+		case HOLD:
 			if (!sscanf(pos, "%02d", &hold_cycle))
 				hold_cycle = HOLD_SECONDS;
 			ensure_limits(hold_cycle, 2, 10);
 			break;
 
 			/* Macro days in week? */
-		case 8:
-		case 9:
-		case 10:
-		case 11:
-		case 12:
-		case 13:
-		case 14:
+		case SUN:
+		case MON:
+		case TUE:
+		case WED:
+		case THR:
+		case FRI:
+		case SAT:
 			/* For groups, */
 			process_day = cmd - 8;
 			/* Remove grouping flag for next defintion */
@@ -1008,12 +1027,12 @@ static void parse_config(char *content)
 
 			break;
 
-		case 15:
+		case DISKNAG:
 			if (strcasecmp(pos, "ON") == 0)
 				pester_message = 1;
 
 			/* Fan failure stop time before event trigger */
-		case 16:
+		case FANSTOP:
 			if (strcasecmp(pos, "OFF") == 0)
 				fan_fault_seize = 0;
 			else {
@@ -1024,8 +1043,8 @@ static void parse_config(char *content)
 			break;
 
 		/* Specified partition names */
-		case 17: /* root device */
-		case 18: /* work device */
+		case ROOT: /* root device */
+		case WORK: /* work device */
 			if (strlen(pos) <= 5) {
 				diskcheck_number++;
 				char *tgt_device = (cmd == 17) ? root_device : work_device;
