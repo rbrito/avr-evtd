@@ -836,7 +836,6 @@ static void parse_config(char *content)
 	char *pos;
 	char *last;		/* Used by strtok_r to point to current token */
 	int j;
-	int cmd;
 	int hour;
 	int minutes;
 	int group = 0;
@@ -867,7 +866,7 @@ static void parse_config(char *content)
 
 	/* To prevent looping */
 	for (int i = 0; i < 200; i++) {
-		cmd = -1;
+		int cmd = -1;
 
 		if (pos[0] != COMMENT_PREFIX) {
 			/* Could return groups, say MON-THR, need to
