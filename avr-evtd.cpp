@@ -719,7 +719,7 @@ static char check_disk(void)
 	char *pos;
 	char buff[4096];
 
-	enum { UNSET = -1, ROOT, WORK } cmd;
+	enum { UNSET = -1, ROOT, WORK } device_type;
 
 	if (FirstTime < diskcheck_number) {	/* first, determine paths from mtab */
 		FirstTime = 0;
@@ -731,12 +731,12 @@ static char check_disk(void)
 		if (read(file, buff, 4095) > 0) {
 			pos = strtok(buff, " \n");
 			for (int i = 0; i < 60; i++) {
-				cmd = UNSET;
+				device_type = UNSET;
 
 				if (strcasecmp(pos, root_device) == 0)
-					cmd = ROOT;
+					device_type = ROOT;
 				else if (strcasecmp(pos, work_device) == 0)
-					cmd = WORK;
+					device_type = WORK;
 
 				pos = strtok(NULL, " \n");
 				if (!pos)
@@ -745,7 +745,7 @@ static char check_disk(void)
 				/* Increment firsttime check, with bad
 				 * restarts, /dev/hda3 may not be mounted
 				 * yet (running a disk check) */
-				switch (cmd) {
+				switch (device_type) {
 				case ROOT:
 					sprintf(root_mountpt, "%s", pos);
 					break;
