@@ -1046,7 +1046,7 @@ static void parse_config(char *content)
 		/* Specified partition names */
 		case ROOT: /* root device */
 		case WORK: /* work device */
-			if (strlen(pos) <= 5) {
+			if (strlen(pos) <= 5) { // FIXME: make string length more flexible
 				diskcheck_number++;
 				char *tgt_device = (cmd == ROOT) ? root_device : work_device;
 				sprintf(tgt_device, "/dev/%s", pos);
