@@ -1016,7 +1016,7 @@ static void parse_config(char *content)
 		case SAT:
 			/* For groups, */
 			process_day = cmd - 8;
-			/* Remove grouping flag for next defintion */
+			/* Remove grouping flag for next definition */
 			last_group += group;
 			if (last_group > 2) {
 				group = last_group = 0;
