@@ -979,7 +979,7 @@ static void parse_config(char *content)
 				timer_flag = -1;
 
 			/* Update our pointers */
-			if (cmd < POWERON)
+			if (cmd < POWERON) // FIXME: Avoid ordered comparisons with enum
 				pOff = pTimer;
 			else
 				pOn = pTimer;
