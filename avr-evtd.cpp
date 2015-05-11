@@ -879,7 +879,7 @@ static void parse_config(char *content)
 			}
 
 			/* Locate our expected commands */
-			for (cmd = 0; cmd < NCOMMANDS; cmd++)
+			for (cmd = 0; cmd < (int) NCOMMANDS; cmd++)
 				if (strcasecmp(pos, command[cmd]) == 0)
 					break;
 
