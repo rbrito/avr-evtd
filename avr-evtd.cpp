@@ -1045,7 +1045,7 @@ static void parse_config(char *content)
 		case WORK: /* work device */
 			if (strlen(pos) <= 5) {
 				diskcheck_number++;
-				char *tgt_device = (cmd == 17) ? root_device : work_device;
+				char *tgt_device = (cmd == ROOT) ? root_device : work_device;
 				sprintf(tgt_device, "/dev/%s", pos);
 			}
 			break;
