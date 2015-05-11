@@ -946,7 +946,7 @@ static void parse_config(char *content)
 			else if ((hour >= 0 && hour <= 24)
 				 && (minutes >= 0 && minutes <= 59)) {
 				/* Valid macro'd OFF/ON entry? */
-				if (cmd == 2 || cmd == 4) {
+				if (cmd == OFF || cmd == ON) {
 					/* Group macro so create the other events */
 					if (group != 0) {
 						j = first_day - 1;
@@ -971,15 +971,15 @@ static void parse_config(char *content)
 				}
 
 				/* Now handle the defaults */
-				else if (cmd == 1)
+				else if (cmd == SHUTDOWN)
 					off_time = (hour * 60) + minutes;
-				else if (cmd == 3)
+				else if (cmd == POWERON)
 					on_time = (hour * 60) + minutes;
 			} else
 				timer_flag = -1;
 
 			/* Update our pointers */
-			if (cmd < 3)
+			if (cmd < POWERON)
 				pOff = pTimer;
 			else
 				pOn = pTimer;
@@ -1016,7 +1016,7 @@ static void parse_config(char *content)
 		case FRI:
 		case SAT:
 			/* For groups, */
-			process_day = cmd - 8;
+			process_day = cmd - SUN;
 			/* Remove grouping flag for next definition */
 			last_group += group;
 			if (last_group > 2) {
