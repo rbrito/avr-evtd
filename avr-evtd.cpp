@@ -1031,7 +1031,7 @@ static void parse_config(char *content)
 		case DISKNAG:
 			if (strcasecmp(pos, "ON") == 0)
 				pester_message = 1;
-
+			break;
 			/* Fan failure stop time before event trigger */
 		case FANSTOP:
 			if (strcasecmp(pos, "OFF") == 0)
