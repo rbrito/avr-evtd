@@ -827,7 +827,7 @@ static void parse_config(char *content)
 
 
 
-#define NCOMMANDS		(sizeof(command)/sizeof(const char*))
+#define NCOMMANDS		(sizeof(command) / sizeof(const char*))
 
 	char *pos;
 	char *last;		/* Used by strtok_r to point to current token */
