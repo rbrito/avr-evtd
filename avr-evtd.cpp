@@ -695,13 +695,15 @@ static char check_disk(void)
 {
 	static const int PART_NAME_SIZE = 16;
 	static const int BUFF_SIZE = 4096;
+
 	static char FirstTime = 0;
 	static char root_mountpt[PART_NAME_SIZE];
 	static char work_mountpt[PART_NAME_SIZE];
 	struct statfs mountfs;
+
 	int pct_root = 0;	/* percentage of the root fs that is used */
 	int pct_work = 0;	/* percentage of the work fs that is used */
-	char *pos;
+
 	char buff[BUFF_SIZE];
 
 	enum { UNSET = -1, ROOT, WORK } device_type;
@@ -714,7 +716,7 @@ static char check_disk(void)
 			goto err_not_avail;
 
 		if (read(file, buff, BUFF_SIZE - 1) > 0) {
-			pos = strtok(buff, " \n");
+			char *pos = strtok(buff, " \n");
 			for (int i = 0; i < 60; i++) {
 				device_type = UNSET;
 
