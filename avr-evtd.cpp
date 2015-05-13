@@ -105,7 +105,7 @@ char pester_message;
 int fan_fault_seize = 30;
 int check_state = 1;	/* Will force an update within 15 seconds of starting
 			   up to resolve those pushed out refresh times. */
-char em_mode;
+char in_em_mode = 0;
 char root_device[10];		/* root filesystem device */
 char work_device[10];		/* work filesystem device */
 int diskcheck_number;
@@ -515,7 +515,7 @@ static void avr_evtd_main(void)
 
 			/* Has user held the reset button long enough to request EM-Mode? */
 			if ((idle + EM_MODE_TIME) < time_now) {
-				if (pushed_reset == 1 && em_mode) {
+				if (pushed_reset == 1 && in_em_mode) {
 					/* Send EM-Mode request to script.  The script handles the
 					 * flash device decoding and writes the HDD no-good flag
 					 * NGNGNG into the flash status.  It then flags a reboot
@@ -1337,7 +1337,7 @@ int main(int argc, char *argv[])
 			printf(VERSION);
 			exit(0);
 		case 'e':
-			em_mode = 1;
+			in_em_mode = 1;
 			break;
 		case 'h':
 			usage();
