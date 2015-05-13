@@ -1052,8 +1052,8 @@ static void parse_config(char *content)
  * Destroys time objects
  *
  * @param e A pointer to the event structure containing the head of the
- * linked list of events to be deleted.
- *
+ * linked list of events to be deleted.  Note that the entire linked list
+ * is destroyed, not just its first element.
  */
 static void destroy_timer(event *e)
 {
