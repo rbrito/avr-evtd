@@ -98,14 +98,13 @@ long on_time = -1;		/* Default, NO defaults */
 char command_line_update = 1;
 
 int max_pct = 90;
-int last_day;
+int last_day;			/* Day of week.	[0-6] */
 int refresh_rate = 40;
 int hold_cycle = 3;
 char pester_message;
 int fan_fault_seize = 30;
-int check_state = 1;		/* Will force an update within 15
-				 * seconds of starting up to resolve
-				 * those pushed out refresh times */
+int check_state = 1;	/* Will force an update within 15 seconds of starting
+			   up to resolve those pushed out refresh times. */
 char em_mode;
 char root_device[10];		/* root filesystem device */
 char work_device[10];		/* work filesystem device */
@@ -352,15 +351,14 @@ static void avr_evtd_main(void)
 	while (serialfd) {
 		timeout_poll.tv_usec = 0;
 		int res = refresh_rate;
-		/* After file change or startup, update the time within
-		 * 20 secs as the user may have pushed the refresh time
-		 * out */
+		/* After file change or startup, update the time within 20 secs as the
+		 * user may have pushed the refresh time out. */
 		if (check_state > 0) {
 			res = 2;
 		} else {
-			/* Change our timer to check for a power/reset
-			 * request need a faster poll rate here to see
-			 * the double press event properly */
+			/* Change our timer to check for a power/reset request need a
+			 * faster poll rate here to see the double press event
+			 * properly. */
 			if (pushed_power || pushed_reset || first_time_flag > 1) {
 				timeout_poll.tv_usec = 250;
 				res = 0;
@@ -370,16 +368,14 @@ static void avr_evtd_main(void)
 		}
 
 		if (check_state != -2) {
-			/* Ensure we shutdown on the nail if the timer
-			 * is enabled will be off slightly as timer
-			 * reads are different */
+			/* Ensure we shutdown on the nail if the timer is enabled will
+			 * be off slightly as timer reads are different */
 			if (timer_flag == 1) {
 				if (shutdown_timer < res)
 					res = shutdown_timer;
 			}
 
-			/* If we have a fan failure report, then ping
-			 * frequently */
+			/* If we have a fan failure report, then ping frequently */
 			if (fan_fault > 0)
 				res = fan_fault == 6 ? fan_fault_seize : 2;
 		}
@@ -490,7 +486,7 @@ static void avr_evtd_main(void)
 				exec_simple_cmd(AVR_HALT);
 				break;
 
-				/* AVR initialisation complete */
+				/* AVR initialization complete */
 			case 0x33:	/* '3' */
 				break;
 			default:
@@ -520,15 +516,12 @@ static void avr_evtd_main(void)
 			/* Has user held the reset button long enough to request EM-Mode? */
 			if ((idle + EM_MODE_TIME) < time_now) {
 				if (pushed_reset == 1 && em_mode) {
-					/* Send EM-Mode request to script.
-					 * The script handles the flash
-					 * device decoding and
-					 * writes the HDD no-good flag
-					 * NGNGNG into the flash status.
-					 * It then flags a reboot which
-					 * causes the box to boot from
-					 * ram-disk backup to recover
-					 * the HDD */
+					/* Send EM-Mode request to script.  The script handles the
+					 * flash device decoding and writes the HDD no-good flag
+					 * NGNGNG into the flash status.  It then flags a reboot
+					 * which causes the box to boot from ram-disk backup to
+					 * recover the HDD.
+					 */
 					exec_simple_cmd(EM_MODE);
 
 					pushed_reset = 0;
@@ -557,25 +550,20 @@ static void avr_evtd_main(void)
 									/* Inform the EventScript */
 									exec_cmd(FIVE_SHUTDOWN, shutdown_timer);
 
-									/* Re-validate out time
-									   wake-up; do not perform
-									   if in extra time */
+									/* Re-validate out time wake-up; do not
+									 * perform if in extra time */
 									if (!extraTime)
 										set_avr_timer(1);
 								}
 							}
 						}
-						/* Large clock drift,
-						 * either user set time
-						 * or an ntp update,
-						 * handle
-						 * accordingly. */
+						/* Large clock drift, either user set time
+						 * or an ntp update, handle accordingly. */
 						else {
 							check_timer(2);
 						}
 					} else {
-						/* Prevent re-entry and
-						 * execute command */
+						/* Prevent re-entry and execute command */
 						pushed_power = pressed_reset_flag = 2;
 						exec_simple_cmd(TIMED_SHUTDOWN);
 					}
@@ -592,8 +580,7 @@ static void avr_evtd_main(void)
 					check_state = 1;
 					break;
 
-					/* Check for timer change
-					 * through configuration file */
+					/* Check for timer change through configuration file */
 				case 1:
 					check_timer(0);
 					check_state = 2;
@@ -602,9 +589,8 @@ static void avr_evtd_main(void)
 					/* Check the disk and ping AVR accordingly */
 				case -2:
 
-					/* Check the disk to see if full
-					 * and output appropriate AVR
-					 * command? */
+					/* Check the disk to see if full and output appropriate
+					 * AVR command? */
 				case 2:
 					cmd = keep_alive;
 
@@ -655,8 +641,7 @@ static void avr_evtd_main(void)
 			case 3:
 			case 4:
 				if ((fault_time + fan_fault_seize) < time_now) {
-					/* Run some user script on no
-					 * fan restart message after
+					/* Run some user script on no fan restart message after
 					 * FAN_FAULT_SEIZE time */
 					exec_cmd(FAN_FAULT, 4);
 					fan_fault = 5;
@@ -674,9 +659,8 @@ static void avr_evtd_main(void)
 				break;
 			}
 
-			/* Check that the shutdown pause function (if
-			 * activated) is still available, no then ping
-			 * the delayed time */
+			/* Check that the shutdown pause function (if activated) is still
+			 * available, no then ping the delayed time */
 			if ((power_press + SP_MONITOR_TIME) < time_now && first_time_flag > 1) {
 				/* Inform the EventScript */
 				exec_cmd(FIVE_SHUTDOWN, shutdown_timer/60);
@@ -743,9 +727,8 @@ static char check_disk(void)
 				if (!pos)
 					break;
 
-				/* Increment firsttime check, with bad
-				 * restarts, /dev/hda3 may not be mounted
-				 * yet (running a disk check) */
+				/* Increment firsttime check, with bad restarts,
+				 * /dev/hda3 may not be mounted yet (running a disk check) */
 				switch (device_type) {
 				case ROOT:
 					sprintf(root_mountpt, "%s", pos);
@@ -769,13 +752,13 @@ static char check_disk(void)
 			if (strlen(root_mountpt) > 0) {
 				if (statfs(root_mountpt, &mountfs) == -1)
 					goto err_not_avail;
-				pct_root = 100 - ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
+				pct_root = 100 - ((100.0 * mountfs.f_bavail) / mountfs.f_blocks);
 			}
 
 			if (strlen(work_mountpt) > 0) {
 				if (statfs(work_mountpt, &mountfs) == -1)
 					goto err_not_avail;
-				pct_work = 100 - ((100.0 * mountfs.f_bavail)/mountfs.f_blocks);
+				pct_work = 100 - ((100.0 * mountfs.f_bavail) / mountfs.f_blocks);
 			}
 		}
 	}
