@@ -186,14 +186,14 @@ static void write_to_uart(char cmd)
  * @param device A string containing the device to be used to communicate
  * with the UART.
  *
- * @param probe The value 0 if we are opening the device for regular use or
- *              1 if we just want to probe the memory address associated
- *              with @a device.
+ * @param probe_only The value false if we are opening the device for regular use or
+ *              	 true if we just want to probe the memory address associated
+ *              	 with @a device.
  *
  * @return A negative value if problems were encountered while opening @a
  * device.
  */
-static int open_serial(char *device, char probe)
+static int open_serial(char *device, bool probe_only)
 {
 	struct termios newtio;
 
@@ -203,7 +203,7 @@ static int open_serial(char *device, char probe)
 		return -1;
 	}
 
-	if (probe) {
+	if (probe_only) {
 		struct serial_struct serinfo;
 
 		ioctl(serialfd, TIOCGSERIAL, &serinfo);
@@ -1306,7 +1306,7 @@ static void check_timer(int type)
 
 int main(int argc, char *argv[])
 {
-	int probe = 0;		/* mode in which we open the serial port */
+	bool probe_only = false;	/* mode in which we open the serial port */
 	int debug = 0;		/* determine if we are in debug mode or not */
 
 	if (argc == 1) {
@@ -1330,7 +1330,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'i':
-			probe = 1;
+			probe_only = true;
 			break;
 		case 'c':
 			debug = 1;
@@ -1368,10 +1368,10 @@ int main(int argc, char *argv[])
 	signal(SIGINT, termination_handler);
 
 	/* Specified port? */
-	if (open_serial(avr_device, probe))
+	if (open_serial(avr_device, probe_only))
 		return -3;
 
-	if (probe) {
+	if (probe_only) {
 		close(serialfd);
 		return 0;
 	}
