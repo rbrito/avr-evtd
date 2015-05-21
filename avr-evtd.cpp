@@ -1307,7 +1307,7 @@ static void check_timer(int type)
 int main(int argc, char *argv[])
 {
 	bool probe_only = false;	/* mode in which we open the serial port */
-	int debug = 0;		/* determine if we are in debug mode or not */
+	bool debug = false;		/* determine if we are in debug mode or not */
 
 	if (argc == 1) {
 		usage();
@@ -1333,7 +1333,7 @@ int main(int argc, char *argv[])
 			probe_only = true;
 			break;
 		case 'c':
-			debug = 1;
+			debug = true;
 			break;
 		case 'v':
 			printf(VERSION);
