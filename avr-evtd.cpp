@@ -227,7 +227,7 @@ static int open_serial(char *device, bool probe_only)
 	ioctl(serialfd, TCSETS, &newtio);
 	ioctl(serialfd, TCFLSH, 2);
 
-	/* Initialise the AVR device: clear memory and reset the timer */
+	/* Initialize the AVR device: clear memory and reset the timer */
 	write_to_uart(0x41);	/* 'A' */
 	write_to_uart(0x46);	/* 'F' */
 	write_to_uart(0x4A);	/* 'J' */
@@ -238,6 +238,7 @@ static int open_serial(char *device, bool probe_only)
 
 	return 0;
 }
+
 
 /**
  *
@@ -874,14 +875,14 @@ static void parse_config(char *content)
 			pos = strtok_r(NULL, "\n", &last);
 
 			/* After the first remark we have ignored, make sure
-			 * we detect a valid line and move the tokeniser
+			 * we detect a valid line and move the tokenizer
 			 * pointer if none remark field */
 			if (pos[0] != COMMENT_PREFIX) {
 				j = strlen(pos);
 				*(last - 1) = ',';	/* Plug the '0' with token parameter  */
 				last = last - (j + 1);
 
-				/* Now lets tokenise this valid line */
+				/* Now let's tokenize this valid line */
 				pos = strtok_r(NULL, ",=\n", &last);
 			}
 		}
@@ -1171,18 +1172,18 @@ static void set_avr_timer(int type)
 		last_day = decode_time->tm_wday;
 
 		get_time(current_time, off_timer, &offTime, off_time);
-		/* Correct search if switch-off is tommorrow */
+		/* Correct search if switch-off is tomorrow */
 		if (offTime > TWENTYFOURHR)
 			get_time(current_time, on_timer, &onTime, on_time);
 		else
 			get_time(offTime, on_timer, &onTime, on_time);
 
-		/* Protect for tomorrows setting */
+		/* Protect for tomorrow's setting */
 		shutdown_timer = (offTime < current_time) ?
 			(TWELVEHR + (offTime - (current_time - TWELVEHR))) * 60 :
 			(offTime - current_time) * 60;
 
-		/* Remeber the current seconds passed the minute */
+		/* Remember the current seconds passed the minute. */
 		shutdown_timer -= decode_time->tm_sec;
 
 		ttime = ltime + shutdown_timer;
@@ -1192,7 +1193,7 @@ static void set_avr_timer(int type)
 			decode_time->tm_mon + 1, decode_time->tm_mday,
 			decode_time->tm_hour, decode_time->tm_min);
 
-		/* Now setup the AVR with the power-on time */
+		/* Now, setup the AVR with the power-on time */
 
 		long wait_time;
 
@@ -1294,7 +1295,7 @@ static void check_timer(int type)
 		}
 	}
 
-	/* Ensure that if we have any configuration errors we at least set timer off */
+	/* Ensure that if we have any configuration errors we at least set timer off. */
 	if (command_line_update == 2) {
 		command_line_update = 3;
 		set_avr_timer(type);
