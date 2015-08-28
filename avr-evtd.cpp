@@ -1323,12 +1323,12 @@ int main(int argc, char *argv[])
 		case 'd':
 			--argc;
 			++argv;
-			if (argc >= 1) {
-				sprintf(avr_device, "%s", *argv);
-			} else {
+			if (argc <= 0) {
 				printf("Option -d requires an argument.\n\n");
 				usage();
 			}
+
+			sprintf(avr_device, "%s", *argv);
 			break;
 		case 'i':
 			probe_only = true;
