@@ -1328,6 +1328,11 @@ int main(int argc, char *argv[])
 				usage();
 			}
 
+			if (strlen(*argv) >= sizeof(avr_device)) {
+				fprintf(stderr, "Device name too long.\n");
+				exit(1);
+			}
+
 			sprintf(avr_device, "%s", *argv);
 			break;
 		case 'i':
